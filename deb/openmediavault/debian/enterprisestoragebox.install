@@ -1,6 +1,0 @@
-usr/sbin/* usr/sbin/
-usr/share/enterprisestoragebox/* usr/share/enterprisestoragebox/
-usr/share/php/enterprisestoragebox/* usr/share/php/enterprisestoragebox/
-usr/lib/python3/* usr/lib/python3/
-etc/* etc/
-var/www/enterprisestoragebox var/www/
