@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<productinfo>
+	<name>enterprisestoragebox</name>
+	<versionname>Axbridge</versionname>
+	<url>http://www.enterprisestoragebox.org</url>
+	<copyright>Copyright (C) 2009-2015 by Artur Osinski-Stachowicz. All rights reserved.</copyright>
+	<packagename>enterprisestoragebox</packagename>
+	<distribution>Axbridge</distribution>
+</productinfo>

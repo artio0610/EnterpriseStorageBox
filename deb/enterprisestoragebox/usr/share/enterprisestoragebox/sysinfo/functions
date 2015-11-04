@@ -1,0 +1,50 @@
+# This file is part of EnterpriSestorageBox.
+#
+# @license   http://www.gnu.org/licenses/gpl.html GPL Version 3
+# @author   Artur Osinski-Stachowicz <artio0610@gmail.com>
+# @copyright Copyright (c) 2009-2015 Artur Osinski-Stachowicz
+#
+# EnterpriSestorageBox is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# any later version.
+#
+# EnterpriSestorageBox is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with EnterpriSestorageBox. If not, see <http://www.gnu.org/licenses/>.
+
+. /etc/default/enterprisestoragebox
+. /usr/share/enterprisestoragebox/scripts/helper-functions
+
+esb_sysinfo_begin_msg() {
+	esb_msg "================================================================================"
+	esb_msg "= $@"
+	esb_msg "================================================================================"
+}
+
+esb_sysinfo_msg() {
+	if test $# -eq 0 ; then
+		while IFS='' read msg || [ -n "${msg}" ]; do
+			esb_msg "${msg}"
+		done
+	else
+		esb_msg "$@"
+	fi
+}
+
+esb_sysinfo_end_msg() {
+	esb_msg ""
+}
+
+esb_sysinfo_msg_separator() {
+	esb_msg "--------------------------------------------------------------------------------"
+}
+
+esb_sysinfo_msg_caption() {
+	esb_msg "$@:"
+	esb_msg "$@:" | sed 's/./=/g'
+}

@@ -1,0 +1,895 @@
+# This file is part of EnterpriSestorageBox.
+#
+# @license   http://www.gnu.org/licenses/gpl.html GPL Version 3
+# @author   Artur Osinski-Stachowicz <artio0610@gmail.com>
+# @copyright Copyright (c) 2009-2015 Artur Osinski-Stachowicz
+#
+# EnterpriSestorageBox is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# any later version.
+#
+# EnterpriSestorageBox is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with EnterpriSestorageBox. If not, see <http://www.gnu.org/licenses/>.
+
+. /etc/default/enterprisestoragebox
+
+# Helper makro for 'xmlstarlet' to get the shared folder path for a
+# given 'sharedfolderref'. The 'sharedfolderref' element must be a child
+# of the current processed node.
+# @return The shared folder path, e.g /media/85732966-949a-4d8b-87d7-d7e6681f787e/data.
+ESB_XMLSTARLET_GET_SHAREDFOLDER_PATH=${ESB_XMLSTARLET_GET_SHAREDFOLDER_PATH=-m "//system/shares/sharedfolder[uuid=current()/sharedfolderref]" -v "concat(//system/fstab/mntent[uuid=current()/mntentref]/dir,'/',reldirpath)" -b}
+
+# Helper makro for 'xmlstarlet' to get the shared folder name for a
+# given 'sharedfolderref'. The 'sharedfolderref' element must be a child
+# of the current processed node.
+# @return The shared folder name, e.g. data.
+ESB_XMLSTARLET_GET_SHAREDFOLDER_NAME=${ESB_XMLSTARLET_GET_SHAREDFOLDER_NAME=-m "//system/shares/sharedfolder[uuid=current()/sharedfolderref]" -v "name" -b}
+
+# Helper makro for 'xmlstarlet' to get the shared folders mount directory for
+# a given 'sharedfolderref'. The 'sharedfolderref' element must be a child
+# of the current processed node.
+# @return The shared folder path, e.g /media/85732966-949a-4d8b-87d7-d7e6681f787e/data.
+ESB_XMLSTARLET_GET_SHAREDFOLDER_MOUNT_DIR=${ESB_XMLSTARLET_GET_SHAREDFOLDER_PATH=-m "//system/shares/sharedfolder[uuid=current()/sharedfolderref]" -v "//system/fstab/mntent[uuid=current()/mntentref]/dir" -b}
+
+# esb_isnumber value
+# Check if the given argument is a number.
+# Return 0 if it is a number, otherwise 1.
+esb_isnumber() {
+	if $(echo $1 | grep -q [^[:digit:]]); then
+		return 1
+	fi
+	return 0
+}
+
+# esb_isuuid value
+# Check if the given argument is an UUID v4.
+# Return 0 if it is a UUID, otherwise 1.
+esb_isuuid() {
+    if $(echo $1 | grep -Eqi "^[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}$"); then
+        return 0
+    fi
+    return 1
+}
+
+# esb_isfsuuid value
+# Check if the given argument is a filesystem UUID. They may look like:
+# EXT(2|3|4)/JFS/XFS: 7725c816-00d8-11e1-ad4c-00221568ca88
+# DOS: 7A48-BA97
+# NTFS: 2ED43920D438EC29
+# ISO9660: 2015-01-13-21-48-46-00
+# Return 0 if it is a file system UUID, otherwise 1.
+esb_isfsuuid() {
+	# See /usr/share/php/enterprisestoragebox/globals.inc
+	if esb_isuuid "$1"; then
+		return 0
+	fi
+    if $(echo $1 | grep -Eqi "^([a-f0-9]{4}-[a-f0-9]{4}|[a-f0-9]{16}|[0-9]{4}-[0-9]{2}-[0-9]{2}-[0-9]{2}-[0-9]{2}-[0-9]{2}-[0-9]{2})$"); then
+        return 0
+    fi
+    return 1
+}
+
+# esb_trim [options] value
+# Strip a character from the beginning and end of a string.
+# @param options The command options.
+# @param value The string that will be trimmed.
+# @return The trimmed string.
+esb_trim() {
+	local _char _left _right _cmdargs
+	_char=" "
+	_left=0
+	_right=0
+	_cmdargs=""
+	while getopts 'c:lr' option
+	do
+		case ${option} in
+		c)
+			_char="${OPTARG}"
+			;;
+		l)
+			_left=1
+			;;
+		r)
+			_right=1
+			;;
+		esac
+	done
+	shift $((OPTIND-1))
+	if [ ${_left} -eq 0 -a ${_right} -eq 0 ]; then
+		_left=1
+		_right=1
+	fi
+	if test $# -eq 0 ; then
+		value=$(cat)
+	else
+		value=$*
+	fi
+	_cmdargs=""
+	[ ${_left} -eq 1 ] && _cmdargs="${_cmdargs} -e s/^$(esb_quotemeta ${_char})*//"
+	[ ${_right} -eq 1 ] && _cmdargs="${_cmdargs} -e s/$(esb_quotemeta ${_char})*\$//"
+	echo $value | sed ${_cmdargs}
+}
+
+esb_rtrim() {
+	esb_trim -r $@
+}
+
+esb_ltrim() {
+	esb_trim -l $@
+}
+
+# esb_escapeshellarg value
+# Escape a string to be used as a shell argument.
+esb_escapeshellarg() {
+	perl - $@ <<'EOF'
+my $arg = shift;
+$arg =~ s/'/'\\''/g;
+print "'" . $arg . "'";
+EOF
+}
+
+# esb_uuid
+# Create a UUID v4.
+esb_uuid() {
+	uuid -v 4
+}
+
+# esb_debug message
+# If debugging is enabled output message to stderr.
+esb_debug() {
+	case ${ESB_DEBUG_SCRIPT} in
+	[Yy][Ee][Ss]|[Tt][Rr][Uu][Ee]|[Oo][Nn]|1)
+		if [ ! -z "$(which logger)" ]; then
+			logger "$0: DEBUG: $*"
+		fi
+		echo 1>&2 "$0: DEBUG: $*"
+		;;
+	esac
+}
+
+# esb_checkyesno value
+# Test if the given value is yes or no.
+# Return 0 if it's "1|y|yes|true|on", otherwise 1.
+esb_checkyesno() {
+	case ${1} in
+	  1|[Yy]|[Yy][Ee][Ss]|[Tt][Rr][Uu][Ee]|[Oo][Nn])
+		return 0
+		;;
+	  0|[Nn]|[Nn][Oo]|[Ff][Aa][Ll][Ss][Ee]|[Oo][Ff][Ff])
+		return 1
+		;;
+	  *)
+		return 1
+		;;
+	esac
+}
+
+# esb_log message
+# Log the given message to syslog.
+esb_log() {
+	local _tag
+	_tag=$(basename $0)
+	while getopts 't:' option
+	do
+		case ${option} in
+		t)
+			_tag="${OPTARG}"
+			;;
+		esac
+	done
+	shift $((OPTIND-1))
+	logger -t "${_tag}" $@
+}
+
+# esb_error message
+# Print error to stderr and syslog.
+esb_error() {
+	echo $* >&2
+	esb_log $*
+}
+
+# esb_msg message
+# Print the message to stdout.
+esb_msg() {
+	echo "$*"
+}
+
+# esb_exec_rpc service method params
+# Execute an RPC.
+# @return Returns 0 if successful, otherwise 1 or the esb-rpc exit code.
+esb_exec_rpc() {
+	esb_debug "esb_exec_rpc: service=<$1>, method=<$2>, params=<$3>"
+	# Check whether the esb-engined daemon is running.
+#	if ! esb_is_proc_running "esb-engined"; then
+#		esb_error "Failed to execute RPC (service=$1, method=$2): Daemon is not running"
+#		return 1
+#	fi
+	# Execute the RPC.
+	esb-rpc $@ >/dev/null
+	if [ $? -ne 0 ]; then
+		esb_error "Failed to execute RPC (service=$1, method=$2)"
+		return 1
+	fi
+	return $?
+}
+
+# esb_get_if [interface]
+# Get the interface. If set to 'auto' use the first interface found.
+esb_get_if() {
+	local _interface
+	_interface=$1
+	case ${_interface} in
+	[Aa][Uu][Tt][Oo])
+		_interface=`ifconfig -s | tail -n +2 | head -n 1 | awk '{print $1}'`
+		;;
+	esac
+	echo ${_interface}
+}
+
+# esb_get_ipaddr [interface]
+# Get the IPv4 address from the given network interface.
+esb_get_ipaddr() {
+	local _ipaddr
+	_ipaddr=$(export LANG=C; ip -4 addr show $1 | sed -n 's/^\s\+inet \([0-9\.]\+\)\/[0-9]\+ brd.\+/\1/p')
+	echo ${_ipaddr}
+}
+
+# esb_get_ipaddr6 [interface]
+# Get the IPv6 address from the given network interface.
+esb_get_ipaddr6() {
+	local _ipaddr
+	_ipaddr=$(export LANG=C; ip -6 addr show $1 | sed -n 's/^\s\+inet6 \([a-f0-9:]\+\)\/[0-9]\+ scope global/\1/p')
+	echo ${_ipaddr}
+}
+
+# esb_get_gateway [interface]
+# Get the default IPv4 gateway for the given network interface.
+esb_get_gateway() {
+	local _gateway
+	_gateway=$(export LANG=C; ip -4 route show dev $1 | sed -n 's/default via \([0-9\.]\+\)/\1/p')
+	echo ${_gateway}
+}
+
+# esb_get_gateway6 [interface]
+# Get the default IPv6 gateway for the given network interface.
+esb_get_gateway6() {
+	local _gateway
+	_gateway=$(export LANG=C; ip -6 route show dev $1 | sed -n 's/default via \([a-f0-9:]\+\)/\1/p')
+	echo ${_gateway}
+}
+
+# esb_config_exists xpath
+# Check if xpath is available/found in the configuration file.
+# Return 0 if set, nonzero otherwise.
+# $1 - XPATH expression
+esb_config_exists() {
+	local _queryresult _result
+
+	esb_debug "esb_config_exists: xpath=<$1>"
+
+	# Get requested xpath
+	_queryresult=`xmlstarlet sel -t -v "count($1)" ${ESB_CONFIG_FILE}`
+	_result=$?
+
+	esb_debug "esb_config_exists: results: query=<${_queryresult}> cmd=<${_result}>"
+
+	if [ 0 -eq ${_queryresult} ]; then
+		return 1
+	else
+		return 0
+	fi
+}
+
+# esb_config_get xpath
+# Get xpath from the configuration file.
+# Return 0 if successful, nonzero otherwise. Return result from query is echoed.
+# $1 - XPATH expression
+esb_config_get() {
+	local _queryresult _result
+
+	esb_debug "esb_config_get: xpath=<$1>"
+
+	# Get requested xpath
+	_queryresult=`xmlstarlet sel -t -v "$1" ${ESB_CONFIG_FILE} | xmlstarlet unesc`
+	_result=$?
+
+	# Output query for later processing.
+	echo ${_queryresult}
+
+	esb_debug "esb_config_get: results: query=<${_queryresult}> cmd=<${_result}>"
+
+	return ${_result}
+}
+
+# esb_config_exec_query xquery
+# Execute given query.
+# Return 0 if successful, nonzero otherwise. Return result from query is echoed.
+esb_config_exec_query() {
+	local _queryresult _result
+
+	esb_debug "esb_config_exec_query: query=<$@>"
+
+	# Execute xml query.
+	_queryresult=`eval "xmlstarlet sel -t $@ ${ESB_CONFIG_FILE} | xmlstarlet unesc"`
+	_result=$?
+
+	# Output query result for later processing.
+	echo ${_queryresult}
+
+	esb_debug "esb_config_exec_query: results: query=<${_queryresult}> cmd=<${_result}>"
+
+	return ${_result}
+}
+
+# esb_config_get_count xpath
+# Get number of elements.
+# Return 0 if successful, nonzero otherwise. Return result from query is echoed.
+# $1 - XPATH expression
+esb_config_get_count() {
+	local _queryresult _result
+
+	esb_debug "esb_config_get_count: xpath=<$1>"
+
+	# Get requested xpath
+	_queryresult=`xmlstarlet sel -t -v "count($1)" ${ESB_CONFIG_FILE}`
+	_result=$?
+
+	# Output query for later processing.
+	echo ${_queryresult}
+
+	esb_debug "esb_config_get_count: results: query=<${_queryresult}> cmd=<${_result}>"
+
+	return ${_result}
+}
+
+# void esb_config_add_element (char *xpath, char *name, char *value)
+# Add a new element to the configuration.
+# @param xpath The XPath to use
+# @param name The name of the element to add
+# @param value The element value. Special XML characters MUST be escaped.
+# @param xml Set to true when the value contains XML data. Defaults to false.
+# @return None
+esb_config_add_element() {
+	local tmpconfig xpath name value xml
+
+	tmpconfig=$(tempfile)
+	xpath=$1
+	name=$2
+	value=$3
+	xml=$4
+
+	# If value contains XML data it must be handled different.
+	if esb_checkyesno ${xml}; then
+		# Create a unique value that will be inserted instead. It will be
+		# replaced by the real value later.
+		value=$(mktemp --dry-run "XXXXXXXXXXXX")
+	fi
+
+	# !Attention! It is necessary to redirect the modified XML data to another
+	# file because xmlstarlet does not like to use the same file
+	# for input and output in a pipe like xmlstarlet ... file > file
+	xmlstarlet edit -P -s "${xpath}" -t elem -n "${name}" -v "${value}" \
+	  "${ESB_CONFIG_FILE}" | tee "${tmpconfig}" >/dev/null
+
+	if esb_checkyesno ${xml}; then
+		# If the value contains XML data then special characters must be
+		# escaped for sed, otherwise they will be misinterpreted.
+		sed -i "s/${value}/$(echo "$3" | sed -e 's/\\/\\\\/g' \
+		  -e 's/\//\\\//g' -e 's/&/\\\&/g')/" "${tmpconfig}"
+	fi
+
+	# Copy temporary file content to config file. Note, the config file
+	# permissions must be kept.
+	cat "${tmpconfig}" | tee "${ESB_CONFIG_FILE}" >/dev/null
+
+	# Flush file system buffers.
+	sync
+
+	# Remove temporary file.
+	rm -f -- "${tmpconfig}"
+}
+
+# void esb_config_rename (char *xpath, char *name)
+# Rename the attribute at the given XPath in the configuration file.
+# @param xpath The XPath to use.
+# @param name The new name.
+# @return None
+esb_config_rename() {
+	local tmpconfig xpath name
+
+	tmpconfig=$(tempfile)
+	xpath=$1
+	name=$2
+
+	# !Attention! It is necessary to redirect the modified XML data to another
+	# file because xmlstarlet does not like to use the same file
+	# for input and output in a pipe like xmlstarlet ... file > file
+	xmlstarlet edit -P -r "${xpath}" -v "${name}" "${ESB_CONFIG_FILE}" | \
+	  tee "${tmpconfig}" >/dev/null
+
+	# Copy temporary file content to config file. Note, the config file
+	# permissions must be kept.
+	cat "${tmpconfig}" | tee "${ESB_CONFIG_FILE}" >/dev/null
+
+	# Remove temporary file.
+	rm -f -- "${tmpconfig}"
+}
+
+# void esb_config_move (char *xpath1, char *xpath2)
+# Move the given XPath to another one in the configuration file.
+# @param xpath1 The source XPath to use.
+# @param xpath2 The destination XPath to use.
+# @return None
+esb_config_move() {
+	local tmpconfig xpath1 xpath2
+
+	tmpconfig=$(tempfile)
+	xpath1=$1
+	xpath2=$2
+
+	# !Attention! It is necessary to redirect the modified XML data to another
+	# file because xmlstarlet does not like to use the same file
+	# for input and output in a pipe like xmlstarlet ... file > file
+	xmlstarlet edit -P -m "${xpath1}" "${xpath2}" "${ESB_CONFIG_FILE}" | \
+	  tee "${tmpconfig}" >/dev/null
+
+	# Copy temporary file content to config file. Note, the config file
+	# permissions must be kept.
+	cat "${tmpconfig}" | tee "${ESB_CONFIG_FILE}" >/dev/null
+
+	# Remove temporary file.
+	rm -f -- "${tmpconfig}"
+}
+
+# void esb_config_update (char *xpath, char *value)
+# Update the elements at the given XPath in the configuration file.
+# @param xpath The XPath to use
+# @param value The element value. Special XML characters MUST be escaped.
+# @param xml Set to true when the value contains XML data. Defaults to false.
+# @return None
+esb_config_update() {
+	local tmpconfig xpath value xml
+
+	tmpconfig=$(tempfile)
+	xpath=$1
+	value=$2
+	xml=$3
+
+	# If value contains XML data it must be handled different.
+	if esb_checkyesno ${xml}; then
+		# Create a unique value that will be inserted instead. It will be
+		# replaced by the real value later.
+		value=$(mktemp --dry-run "XXXXXXXXXXXX")
+	fi
+
+	# !Attention! It is necessary to redirect the modified XML data to another
+	# file because xmlstarlet does not like to use the same file
+	# for input and output in a pipe like xmlstarlet ... file > file
+	xmlstarlet edit -P -u "${xpath}" -v "${value}" "${ESB_CONFIG_FILE}" | \
+	  tee "${tmpconfig}" >/dev/null
+
+	if esb_checkyesno ${xml}; then
+		# If the value contains XML data then special characters must be
+		# escaped for sed, otherwise they will be misinterpreted.
+		sed -i "s/${value}/$(echo "$2" | sed -e 's/\\/\\\\/g' \
+		  -e 's/\//\\\//g' -e 's/&/\\\&/g')/" "${tmpconfig}"
+	fi
+
+	# Copy temporary file content to config file. Note, the config file
+	# permissions must be kept.
+	cat "${tmpconfig}" | tee "${ESB_CONFIG_FILE}" >/dev/null
+
+	# Flush file system buffers.
+	sync
+
+	# Remove temporary file.
+	rm -f -- "${tmpconfig}"
+}
+
+# void esb_config_delete (char *xpath)
+# Delete the elements at the given XPath in the configuration file.
+# @param xpath The XPath to use
+# @return None
+esb_config_delete() {
+	local tmpconfig xpath
+
+	tmpconfig=$(tempfile)
+	xpath=$1
+
+	# Note! It is necessary to redirect the modified XML data to another
+	# file because xmlstarlet does not like to use the same file
+	# for input and output in a pipe like
+	# xmlstarlet ... file > file
+	xmlstarlet edit -d "${xpath}" "${ESB_CONFIG_FILE}" | \
+	  tee "${tmpconfig}" >/dev/null
+
+	# Copy temporary file content to config file. Note, the config file
+	# permissions must be kept.
+	cat "${tmpconfig}" | tee "${ESB_CONFIG_FILE}" >/dev/null
+
+	# Flush file system buffers.
+	sync
+
+	# Remove temporary file.
+	rm -f -- "${tmpconfig}"
+}
+
+# esb_quotemeta [string]
+# Quote special characters (\/&) in the given string.
+# $1 - The string to quote
+esb_quotemeta() {
+	echo $* | sed -e 's/\\/\\\\/g' -e 's/\//\\\//g' -e 's/&/\\\&/g'
+}
+
+# esb_mask2cidr [mask]
+# Function calculates number of bit in a netmask
+# $1 - The netmask, e.g. 255.255.255.0
+esb_mask2cidr() {
+	nbits=0
+	IFS=.
+	for dec in $1 ; do
+		case $dec in
+			255) let nbits+=8;;
+			254) let nbits+=7;;
+			252) let nbits+=6;;
+			248) let nbits+=5;;
+			240) let nbits+=4;;
+			224) let nbits+=3;;
+			192) let nbits+=2;;
+			128) let nbits+=1;;
+			0);;
+			*) echo "Error: $dec is not recognised"; exit 1
+		esac
+	done
+	echo "$nbits"
+}
+
+# esb_cidr2mask [cidr]
+# Function calculates the netmask from a given cidr
+# $1 - The netmask, e.g. 24
+esb_cidr2mask() {
+	local i mask=""
+	local full_octets=$(($1/8))
+	local partial_octet=$(($1%8))
+
+	for i in $(seq 0 3); do
+		if [ $i -lt $full_octets ]; then
+			mask="${mask}255"
+		elif [ $i -eq $full_octets ]; then
+			mask="${mask}$((256 - (1 << (8 - $partial_octet))))"
+		else
+			mask="${mask}0"
+		fi
+		test $i -lt 3 && mask="${mask}."
+	done
+
+	echo $mask
+}
+
+# esb_is_ipaddr4 (char address)
+# Check if the given IPv4 address is valid.
+# @param address The IPv4 address to validate
+# @return 0 if valid, otherwise 1.
+esb_is_ipaddr4() {
+	echo $1 | grep -Eq "^[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}$"
+	[ $? -ne 0 ] && return 1
+	return 0
+}
+
+# esb_is_netmask4 (char netmask)
+# Check if the given IPv4 netmask is valid.
+# @param netmask The IPv4 netmask to validate
+# @return 0 if valid, otherwise 1.
+esb_is_netmask4() {
+	echo $1 | grep -Eq "^(128|192|224|24[08]|25[245].0.0.0)|(255.(0|128|192|224|24[08]|25[245]).0.0)|(255.255.(0|128|192|224|24[08]|25[245]).0)|(255.255.255.(0|128|192|224|24[08]|252))$"
+	[ $? -ne 0 ] && return 1
+	return 0
+}
+
+# esb_is_gateway4 (char gateway)
+# Check if the given IPv4 gateway is valid.
+# @param gateway The IPv4 gateway to validate
+# @return 0 if valid, otherwise 1.
+esb_is_gateway4() {
+	echo $1 | grep -Eq "^[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}$"
+	[ $? -ne 0 ] && return 1
+	return 0
+}
+
+# esb_is_ipaddr6 (char address)
+# Check if the given IPv6 address is valid.
+# @param address The IPv6 address to validate
+# @return 0 if valid, otherwise 1.
+esb_is_ipaddr6() {
+	local _valid
+#	perl -ne "use Socket qw(AF_INET6 inet_pton); print inet_pton(AF_INET6, '$1');"
+	_valid=$(php5 -n -r "filter_var('$1', FILTER_VALIDATE_IP, FILTER_FLAG_IPV6) ? print 0 : print 1;")
+	return ${_valid}
+}
+
+# esb_is_netmask6 (int netmask)
+# Check if the given IPv6 prefix length is valid.
+# @param netmask The IPv6 prefix length to validate
+# @return 0 if valid, otherwise 1.
+esb_is_netmask6() {
+	[ $1 -lt 0 -o $1 -gt 128 ] && return 1
+	return 0
+}
+
+# esb_is_gateway6 (char gateway)
+# Check if the given IPv6 gateway is valid.
+# @param gateway The IPv6 gateway to validate
+# @return 0 if valid, otherwise 1.
+esb_is_gateway6() {
+	local _valid
+#	perl -ne "use Socket qw(AF_INET6 inet_pton); print inet_pton(AF_INET6, '$1');"
+	_valid=$(php5 -n -r "filter_var('$1', FILTER_VALIDATE_IP, FILTER_FLAG_IPV6) ? print 0 : print 1;")
+	return ${_valid}
+}
+
+# esb_is_ipv6_enabled (void)
+# Check if IPv6 is enabled.
+# @return 0 if enabled, otherwise 1.
+esb_is_ipv6_enabled() {
+	[ -f /proc/net/if_inet6 ] && return 0
+	return 1
+}
+
+# esb_is_wlan (chare devicename)
+# Check if the given device is a wireless network interface.
+# @return 0 if wireless, otherwise 1.
+esb_is_wlan() {
+	echo $1 | grep -Eq "^wlan[0-9]+$"
+	[ $? -ne 0 ] && return 1
+	return 0
+}
+
+# void esb_get_sharedfolder_name (char *uuid)
+# Get the name of the given shared folder
+# @param The UUID of the shared folder
+esb_get_sharedfolder_name() {
+	xmlstarlet sel -t -m "//system/shares/sharedfolder[uuid='$1']" \
+	  -v name ${ESB_CONFIG_FILE} | xmlstarlet unesc
+}
+
+# void esb_get_sharedfolder_path (char *uuid)
+# Get the path of the given shared folder
+# @param The UUID of the shared folder
+# @return The shared folder path, e.g /media/85732966-949a-4d8b-87d7-d7e6681f787e/data.
+esb_get_sharedfolder_path() {
+	xmlstarlet sel -t -m "//system/shares/sharedfolder[uuid='$1']" \
+	  -v "//system/fstab/mntent[uuid=current()/mntentref]/dir" \
+	  -v "concat('/',reldirpath)" \
+	  ${ESB_CONFIG_FILE} | xmlstarlet unesc
+}
+
+# int esb_mkdir_sharedfolder (char *uuid)
+# Create the given shared folder
+# @param The UUID of the shared folder
+# @return Return 0 if successful, nonzero otherwise.
+esb_mkdir_sharedfolder() {
+	local path mode result
+	result=0
+	path=$(esb_get_sharedfolder_path $1)
+	if [ ! -d "${path}" ]; then
+		mode=$(xmlstarlet sel -t -m "//system/shares/sharedfolder[uuid='$1']" \
+		  -v umask ${ESB_CONFIG_FILE} | xmlstarlet unesc)
+		mkdir -p --mode ${mode} ${path}
+		result=$?
+		chown :${ESB_USERMGMT_DEFAULT_GROUP} ${path}
+		esb_debug "esb_mkdir_sharedfolder: path=<${path}> mode=<${mode}> cmd=<${result}>"
+	else
+		esb_debug "esb_mkdir_sharedfolder: path=<${path}> already exists"
+	fi
+	return ${result}
+}
+
+# void esb_get_sharedfolder_mount_dir (char *uuid)
+# Get the mount directory of the given shared folder
+# @param The UUID of the shared folder
+# @return The shared folders mount directory, e.g /media/85732966-949a-4d8b-87d7-d7e6681f787e.
+esb_get_sharedfolder_mount_dir() {
+	xmlstarlet sel -t -m "//system/shares/sharedfolder[uuid='$1']" \
+	  -v "//system/fstab/mntent[uuid=current()/mntentref]/dir" \
+	  ${ESB_CONFIG_FILE} | xmlstarlet unesc
+}
+
+# int esb_is_mounted (char *mountpoint)
+# Check if the given mount point is mounted.
+# @param mountpoint The mount point to check for
+# @return Return 0 if mounted, nonzero otherwise.
+esb_is_mounted() {
+	if [ -z "$(mount | grep ${1})" ]; then
+		esb_debug "esb_is_mounted: Mount point '${1}' is not mounted"
+		return 1
+	fi
+	esb_debug "esb_is_mounted: Mount point '${1}' is already mounted"
+	return 0
+}
+
+# void esb_install_fixperms (char *docroot)
+# Set the module/plugin file permissions.
+# @param docroot The path of the document root to be processed.
+#   Defaults to ESB_DOCUMENTROOT_DIR.
+esb_install_fixperms() {
+	local _docroot
+	_docroot=$1
+	[ -z "${_docroot}" ] && _docroot=${ESB_DOCUMENTROOT_DIR}
+	chmod 755 ${_docroot}
+	chown -R ${ESB_WEBGUI_FILE_OWNERGROUP_NAME}:${ESB_WEBGUI_FILE_OWNERGROUP_NAME} ${_docroot}
+	find ${_docroot}/* -type d -exec chmod 775 {} +
+	find ${_docroot}/* -type f -exec chmod 664 {} +
+}
+
+# void esb_install_locale ()
+# Install locale files
+esb_install_locale() {
+	esb-mki18ndict
+}
+
+# void esb_purge_internal_cache ()
+# Purge the internal cache, e.g. used to speedup WebGUI loading.
+esb_purge_internal_cache() {
+	rm -f ${ESB_CACHE_DIR}/cache.*.json
+}
+
+# void esb_set_default (char *key, char* value)
+# Set a default value in /etc/default/enterprisestoragebox.
+esb_set_default() {
+	local _key _value
+	_key=$1
+	_value=$2
+	[ -z "${_key}" ] && return
+	if ! grep -E "^${_key}" /etc/default/enterprisestoragebox >/dev/null; then
+		echo "${_key}=\"${_value}\"" >> /etc/default/enterprisestoragebox
+	else
+		_value=$(esb_quotemeta ${_value})
+		sed -i "s/^${_key}=.*$/${_key}=\"${_value}\"/" /etc/default/enterprisestoragebox
+	fi
+}
+
+# void esb_beep_start ()
+esb_beep_start() {
+	beep -f 3000 -l 100 -r 2
+}
+
+# void esb_beep_ok ()
+esb_beep_ok() {
+	beep -f 3000 -l 100 -r 3 -n -f 3000 -l 500
+}
+
+# void esb_beep_error ()
+esb_beep_error() {
+	beep -f 2000 -l 1200 -r 3
+}
+
+# void esb_kill_tree (int pid)
+# Kill the given process and all it's children.
+esb_kill_tree() {
+	local _pid _cpid
+	_pid=$1
+	[ -z "${_pid}" ] && return
+	kill -stop ${_pid}
+	for _cpid in $(pgrep -P ${_pid}); do
+		esb_kill_tree ${_cpid}
+	done
+	kill ${_pid}
+	kill -cont ${_pid}
+}
+
+# void esb_kill_children (int pid)
+# Kill all children of the given process.
+esb_kill_children() {
+	local _pid _cpid
+	_pid=$1
+	[ -z "${_pid}" ] && return
+	for _cpid in $(pgrep -P ${_pid}); do
+		kill ${_cpid}
+	done
+}
+
+# void esb_module_set_dirty (char *module)
+# Mark the given module as dirty.
+# @param name The name of the module.
+esb_module_set_dirty() {
+	php5 -c /etc/enterprisestoragebox <<EOF
+<?php
+require_once("enterprisestoragebox/module.inc");
+\$moduleMgr = &ESBModuleMgr::getInstance();
+\$moduleMgr->setModuleDirty("$1");
+?>
+EOF
+}
+
+# void esb_module_is_dirty (void)
+# Check if any modules are marked as dirty.
+esb_module_is_dirty() {
+	local _dirty
+	_dirty=$(php5 -c /etc/enterprisestoragebox -r \
+	  "require_once('enterprisestoragebox/module.inc'); \
+	  \$moduleMgr = &ESBModuleMgr::getInstance(); \
+	  \$dirtyModules = \$moduleMgr->getDirtyModules(); \
+	  !empty(\$dirtyModules) ? print 0 : print 1;")
+	return ${_dirty}
+}
+
+# char esb_product_info (char *attrib)
+# Helper function to get information about the product.
+# @param attrib The name of the requested information. This can be<ul>
+#   \li name
+#   \li versionname
+#   \li url
+#   \li copyright
+#   \li packagename
+#   \li distribution
+#   </ul>
+esb_product_info() {
+	xmlstarlet sel -t -v "//$1" "${ESB_PRODUCTINFO_FILE}" | xmlstarlet unesc
+}
+
+# int esb_is_proc_running (char *name)
+# Checks whether the given process is running. The process state is checked
+# by evaluating the PID file of the given process.
+# @param name The name of the process.
+# @return Returns 0 if the process is running, otherwise 1.
+esb_is_proc_running() {
+	local pidfile pid
+	pidfile=/var/run/$1.pid
+	[ ! -f "${pidfile}" ] && return 1
+	pid=$(cat ${pidfile})
+	esb_is_proc_running_pid ${pid} || return 1
+	return 0
+}
+
+# int esb_is_proc_running_pid (int *pid)
+# Checks whether the given process is running.
+# @param pid The PID of the process.
+# @return Returns 0 if the process is running, otherwise 1.
+esb_is_proc_running_pid() {
+	local pid
+	pid=$1
+	[ -z "${pid}" ] && return 1
+	[ ! -d "/proc/${pid}" ] && return 1
+	return 0
+}
+
+# void esb_is_device_nonrotational (char *devicefile)
+# @param name The name of the device, e.g. /dev/sdc.
+# @return Returns 0 if the device is non-rotational, otherwise 1.
+esb_is_device_nonrotational() {
+	local _result
+	[ -z "$1" ] && return 1
+	_result=$(php5 -c /etc/enterprisestoragebox <<EOF
+<?php
+require_once("enterprisestoragebox/system.inc");
+\$result = TRUE;
+\$sd = ESBStorageDevices::getImpl("$1");
+if (!is_null(\$sd))
+	\$result = \$sd->isRotational();
+print \$result ? 1 : 0;
+?>
+EOF
+)
+	return ${_result}
+}
+
+# char esb_get_root_devicefile (void)
+# Get the root device file, e.g.
+# - /dev/sda1
+# - /dev/disk/by-uuid/deb31889-c394-4edc-bac5-c5174e39c404
+esb_get_root_devicefile() {
+	if [ -b "/dev/root" ]; then
+		readlink -f /dev/root
+		return $?
+	fi
+	findmnt -f -n -o SOURCE /
+	return $?
+	# Use udev to find the root devicefile.
+	#_devicenumber=$($(udevadm info --export --export-prefix=ROOT_ --device-id-of-file=/ || true)
+}
