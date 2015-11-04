@@ -1,0 +1,71 @@
+#!/bin/sh
+#
+# This file is part of EnterpriSestorageBox.
+#
+# @license   http://www.gnu.org/licenses/gpl.html GPL Version 3
+# @author   Artur Osinski-Stachowicz <artio0610@gmail.com>
+# @copyright Copyright (c) 2009-2015 Artur Osinski-Stachowicz
+#
+# EnterpriSestorageBox is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# any later version.
+#
+# EnterpriSestorageBox is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with EnterpriSestorageBox. If not, see <http://www.gnu.org/licenses/>.
+
+# Testing:
+# rrdtool info /var/lib/rrdcached/db/localhost/<xxx>/<xxx>.rrd
+
+set -e
+
+. /etc/default/enterprisestoragebox
+. /usr/share/enterprisestoragebox/scripts/helper-functions
+
+ESB_RRDCACHED_DEFAULT=${ESB_RRDCACHED_DEFAULT:-"/etc/default/rrdcached"}
+ESB_RRDCACHED_SOCKETFILE=${ESB_RRDCACHED_SOCKETFILE:-"/var/run/rrdcached.sock"}
+ESB_RRDCACHED_JOURNALDIR=${ESB_RRDCACHED_JOURNALDIR:-"/var/lib/rrdcached/journal/"}
+ESB_RRDCACHED_BASEDIR=${ESB_RRDCACHED_BASEDIR:-"/var/lib/rrdcached/db/"}
+ESB_RRDCACHED_WRITEINTERVAL=${ESB_RRDCACHED_WRITEINTERVAL:-"900"}
+ESB_RRDCACHED_FLUSHINTERVAL=${ESB_RRDCACHED_FLUSHINTERVAL:-"3600"}
+ESB_RRDCACHED_DISABLE=${ESB_RRDCACHED_DISABLE:-"0"}
+ESB_RRDCACHED_OPTS=${ESB_RRDCACHED_OPTS:-"-l unix:${ESB_RRDCACHED_SOCKETFILE} -j ${ESB_RRDCACHED_JOURNALDIR} -F -b ${ESB_RRDCACHED_BASEDIR} -B -w ${ESB_RRDCACHED_WRITEINTERVAL} -f ${ESB_RRDCACHED_FLUSHINTERVAL}"}
+ESB_RRDCACHED_MAXWAIT=${ESB_RRDCACHED_MAXWAIT:-"30"}
+ESB_RRDCACHED_ENABLECOREFILES=${ESB_RRDCACHED_ENABLECOREFILES:-"0"}
+
+mkconf() {
+	# Create '/etc/default/rrdcached' file
+	cat <<EOF > ${ESB_RRDCACHED_DEFAULT}
+# /etc/default/rrdcached
+
+# 0: start rrdcached on boot, 1: do not start rrdcached on boot
+# default: 0
+DISABLE=${ESB_RRDCACHED_DISABLE}
+
+# options to be passed to rrdcached
+# (do not specify -p <pidfile> - this is handled by the init script)
+# default: see /etc/init.d/rrdcached
+OPTS="${ESB_RRDCACHED_OPTS}"
+
+# number of seconds to wait for rrdcached to shut down
+# (writing the data to disk may take some time;
+# tune this according to your setup)
+# default: 30
+MAXWAIT=${ESB_RRDCACHED_MAXWAIT}
+
+# 0: do not enable core-files, 1: enable core-files ... if rrdcached crashes
+# default: 0
+ENABLE_COREFILES=${ESB_RRDCACHED_ENABLECOREFILES}
+EOF
+}
+
+case "$1" in
+	mkconf|*)
+		mkconf
+		;;
+esac

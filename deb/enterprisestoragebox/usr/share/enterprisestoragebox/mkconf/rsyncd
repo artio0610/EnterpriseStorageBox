@@ -1,0 +1,113 @@
+#!/bin/sh
+#
+# This file is part of EnterpriSestorageBox.
+#
+# @license   http://www.gnu.org/licenses/gpl.html GPL Version 3
+# @author   Artur Osinski-Stachowicz <artio0610@gmail.com>
+# @copyright Copyright (c) 2009-2015 Artur Osinski-Stachowicz
+#
+# EnterpriSestorageBox is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# any later version.
+#
+# EnterpriSestorageBox is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with EnterpriSestorageBox. If not, see <http://www.gnu.org/licenses/>.
+
+# Documentation/Howto:
+# http://www.linux-user.de/ausgabe/2006/04/090-rsync/
+# http://ubuntuforums.org/showthread.php?p=7865055
+# http://everythinglinux.org/rsync/
+# http://www.fredshack.com/docs/rsync.html
+
+set -e
+
+. /etc/default/enterprisestoragebox
+. /usr/share/enterprisestoragebox/scripts/helper-functions
+
+ESB_RSYNCD_DEFAULT=${ESB_RSYNCD_DEFAULT:-"/etc/default/rsync"}
+ESB_RSYNCD_CONFIG=${ESB_RSYNCD_CONFIG:-"/etc/rsyncd.conf"}
+ESB_RSYNCD_SECRETSFILE_DIR=${ESB_RSYNCD_SECRETSFILE_DIR:-"/var/lib/enterprisestoragebox"}
+ESB_RSYNCD_LOCKFILE_DIR=${ESB_RSYNCD_LOCKFILE_DIR:-"/var/lock"}
+
+# Create '/etc/default/rsync' file
+xmlstarlet sel -t -m "//services/rsync/server" \
+  -o "# defaults file for rsync daemon mode" -n \
+  -i "enable[. = '1']" -o "RSYNC_ENABLE=true" -n -b \
+  -i "enable[. = '0']" -o "RSYNC_ENABLE=false" -n -b \
+  -o "RSYNC_OPTS=\"\"" -n \
+  ${ESB_CONFIG_FILE} | xmlstarlet unesc > ${ESB_RSYNCD_DEFAULT}
+
+# Create '/etc/rsyncd.conf' file
+xmlstarlet sel -t -m "//services/rsync/server" \
+  -v "concat('port = ',port)" -n \
+  -i "string-length(extraoptions) > 0" -v extraoptions -n -b \
+  ${ESB_CONFIG_FILE} | xmlstarlet unesc > ${ESB_RSYNCD_CONFIG}
+
+# Remove all secrets files
+rm -f ${ESB_RSYNCD_SECRETSFILE_DIR}/rsyncd-*.secrets
+
+index=$(esb_config_get_count "//services/rsync/server/modules/module")
+while [ ${index} -gt 0 ]
+do
+	# Get the UUID of the current module.
+	uuid=$(esb_config_get "//services/rsync/server/modules/module[position()=${index}]/uuid")
+	# Process enabled modules.
+	enabled=$(esb_config_get "//services/rsync/server/modules/module[uuid='${uuid}']/enable")
+	if [ "${enabled}" = "1" ]; then
+		name=$(esb_config_get "//services/rsync/server/modules/module[uuid='${uuid}']/name")
+		authusers=$(esb_config_get "//services/rsync/server/modules/module[uuid='${uuid}']/authusers")
+		secretsfile="${ESB_RSYNCD_SECRETSFILE_DIR}/rsyncd-${name}.secrets"
+
+		# Get the shared folder reference and path
+		sfref=$(esb_config_get "//services/rsync/server/modules/module[uuid='${uuid}']/sharedfolderref")
+		sfpath=$(esb_get_sharedfolder_path "${sfref}")
+		# Specify a dot-dir in the module's path to indicate the point where the chroot should occur
+		sfpath="${sfpath%/*}/./${sfpath##*/}"
+
+		# Create module configuration
+		xmlstarlet sel -t -m "//services/rsync/server/modules/module[uuid='${uuid}']" \
+		  -v "concat('[',name,']')" -n \
+		  -i "string-length(comment) > 0" -v "concat('comment = ',comment)" -n -b \
+		  -o "path = ${sfpath}" -n \
+		  -v "concat('uid = ',uid)" -n \
+		  -v "concat('gid = ',gid)" -n \
+		  -i "list[. = '0']" -o "list = no" -n -b \
+		  -i "list[. = '1']" -o "list = yes" -n -b \
+		  -i "readonly[. = '0']" -o "read only = no" -n -b \
+		  -i "readonly[. = '1']" -o "read only = yes" -n -b \
+		  -i "writeonly[. = '0']" -o "write only = no" -n -b \
+		  -i "writeonly[. = '1']" -o "write only = yes" -n -b \
+		  -i "usechroot[. = '0']" -o "use chroot = no" -n -b \
+		  -i "usechroot[. = '1']" -o "use chroot = yes" -n -b \
+		  -i "maxconnections[. != '0']" -v "concat('max connections = ',maxconnections)" -n -b \
+		  -i "string-length(hostsallow) > 0" -v "concat('hosts allow = ',hostsallow)" -n -b \
+		  -i "string-length(hostsdeny) > 0" -v "concat('hosts deny = ',hostsdeny)" -n -b \
+		  -i "authusers[. = '1']" \
+			-o "auth users = " \
+			-m "users/user" \
+			  -v "name" \
+			  -i "position() != last()" -o "," -b \
+			-b \
+			-n \
+			-o "secrets file = ${secretsfile}" -n \
+		  -b \
+		  -v "concat('lock file = ${ESB_RSYNCD_LOCKFILE_DIR}/rsyncd-',name)" -n \
+		  -i "string-length(extraoptions) > 0" -v extraoptions -n -b \
+		  ${ESB_CONFIG_FILE} | xmlstarlet unesc >> ${ESB_RSYNCD_CONFIG}
+
+		# Create the secrets file containing the usernames and passwords
+		if esb_checkyesno "${authusers}"; then
+			xmlstarlet sel -t -m "//services/rsync/server/modules/module[uuid='${uuid}']/users/user" \
+			  -v "concat(name,':',password)" -n \
+			  ${ESB_CONFIG_FILE} | xmlstarlet unesc > ${secretsfile}
+			chmod 600 ${secretsfile}
+		fi
+	fi
+	index=$(( ${index} - 1 ))
+done

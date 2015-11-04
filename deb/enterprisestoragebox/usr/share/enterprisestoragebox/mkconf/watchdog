@@ -1,0 +1,63 @@
+#!/bin/sh
+#
+# This file is part of EnterpriSestorageBox.
+#
+# @license   http://www.gnu.org/licenses/gpl.html GPL Version 3
+# @author   Artur Osinski-Stachowicz <artio0610@gmail.com>
+# @copyright Copyright (c) 2009-2015 Artur Osinski-Stachowicz
+#
+# EnterpriSestorageBox is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# any later version.
+#
+# EnterpriSestorageBox is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with EnterpriSestorageBox. If not, see <http://www.gnu.org/licenses/>.
+
+# Documentation/Howto:
+# http://www.kernel.org/doc/Documentation/watchdog/
+# http://www.gentoo-wiki.info/Watchdog
+# http://www.pc-freak.net/blog/how-to-automatically-reboot-restart-debian-gnu-lenny-linux-on-kernel-panic-some-general-cpu-overload-or-system-crash-2
+
+set -e
+
+. /etc/default/enterprisestoragebox
+
+ESB_WATCHDOG_CONFIG=${ESB_WATCHDOG_CONFIG:-"/etc/watchdog.conf"}
+ESB_WATCHDOG_DEFAULT=${ESB_WATCHDOG_DEFAULT:-"/etc/default/watchdog"}
+ESB_WATCHDOG_RUNWATCHDOG=${ESB_WATCHDOG_RUNWATCHDOG:-"1"}
+ESB_WATCHDOG_WATCHDOGOPTIONS=${ESB_WATCHDOG_WATCHDOGOPTIONS:-""}
+ESB_WATCHDOG_WATCHDOGMODULE=${ESB_WATCHDOG_WATCHDOGMODULE:-"softdog"}
+ESB_WATCHDOG_REALTIME=${ESB_WATCHDOG_REALTIME:-"yes"}
+ESB_WATCHDOG_PRIORITY=${ESB_WATCHDOG_PRIORITY:-"1"}
+ESB_WATCHDOG_WATCHDOGDEVICE=${ESB_WATCHDOG_WATCHDOGDEVICE:-"/dev/watchdog"}
+
+mkconf() {
+	cat <<EOF > ${ESB_WATCHDOG_CONFIG}
+watchdog-device = ${ESB_WATCHDOG_WATCHDOGDEVICE}
+# This greatly decreases the chance that watchdog won't be scheduled before
+# your machine is really loaded
+realtime = ${ESB_WATCHDOG_REALTIME}
+priority = ${ESB_WATCHDOG_PRIORITY}
+EOF
+
+	cat <<EOF > ${ESB_WATCHDOG_DEFAULT}
+# Start watchdog at boot time? 0 or 1
+run_watchdog=${ESB_WATCHDOG_RUNWATCHDOG}
+# Load module before starting watchdog
+watchdog_module="${ESB_WATCHDOG_WATCHDOGMODULE}"
+# Specify additional watchdog options here (see manpage).
+watchdog_options="${ESB_WATCHDOG_WATCHDOGOPTIONS}"
+EOF
+}
+
+case "$1" in
+	mkconf|*)
+		mkconf
+		;;
+esac

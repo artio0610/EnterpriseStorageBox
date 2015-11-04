@@ -1,0 +1,288 @@
+#!/bin/sh
+#
+# This file is part of EnterpriSestorageBox.
+#
+# @license   http://www.gnu.org/licenses/gpl.html GPL Version 3
+# @author   Artur Osinski-Stachowicz <artio0610@gmail.com>
+# @copyright Copyright (c) 2009-2015 Artur Osinski-Stachowicz
+#
+# EnterpriSestorageBox is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# any later version.
+#
+# EnterpriSestorageBox is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with EnterpriSestorageBox. If not, see <http://www.gnu.org/licenses/>.
+
+# Documentation/Howto:
+# http://wiki.ubuntuusers.de/ProFTPD
+# http://www.proftpd.de/HowTo-Server-Config.42.0.html
+# http://wiki.ubuntu-forum.de/index.php/ProFTPd
+
+set -e
+
+. /etc/default/enterprisestoragebox
+. /usr/share/enterprisestoragebox/scripts/helper-functions
+
+ESB_MKCONF_SCRIPTS_DIR=${ESB_MKCONF_SCRIPTS_DIR:-"/usr/share/enterprisestoragebox/mkconf"}
+
+ESB_PROFTPD_CONFIG=${ESB_PROFTPD_CONFIG:-"/etc/proftpd/proftpd.conf"}
+ESB_PROFTPD_EXTENSIONS_DIR=${ESB_PROFTPD_EXTENSIONS_DIR:-"${ESB_MKCONF_SCRIPTS_DIR}/proftpd.d"}
+ESB_PROFTPD_USEIPV6=${ESB_PROFTPD_USEIPV6:-"on"}
+ESB_PROFTPD_DEFERWELCOME=${ESB_PROFTPD_DEFERWELCOME:-"on"}
+ESB_PROFTPD_MULTILINERFC2228=${ESB_PROFTPD_MULTILINERFC2228:-"on"}
+ESB_PROFTPD_DEFAULTSERVER=${ESB_PROFTPD_DEFAULTSERVER:-"on"}
+ESB_PROFTPD_SHOWSYMLINKS=${ESB_PROFTPD_SHOWSYMLINKS:-"on"}
+ESB_PROFTPD_TIMEOUTNOTRANSFER=${ESB_PROFTPD_TIMEOUTNOTRANSFER:-"600"}
+ESB_PROFTPD_TIMEOUTSTALLED=${ESB_PROFTPD_TIMEOUTSTALLED:-"600"}
+ESB_PROFTPD_LISTOPTIONS=${ESB_PROFTPD_LISTOPTIONS:-"-l"}
+ESB_PROFTPD_MAXINSTANCES=${ESB_PROFTPD_MAXINSTANCES:-"30"}
+ESB_PROFTPD_DENYFILTER=${ESB_PROFTPD_DENYFILTER:-"\*.*/"}
+ESB_PROFTPD_AUTHORDER=${ESB_PROFTPD_AUTHORDER:-"mod_auth_pam.c* mod_auth_unix.c"}
+ESB_PROFTPD_USER=${ESB_PROFTPD_USER:-"proftpd"}
+ESB_PROFTPD_GROUP=${ESB_PROFTPD_GROUP:-"nogroup"}
+ESB_PROFTPD_UMASK=${ESB_PROFTPD_UMASK:-"000 000"}
+ESB_PROFTPD_AUTHPAMCONFIG=${ESB_PROFTPD_AUTHPAMCONFIG:-"proftpd"}
+ESB_PROFTPD_PERSISTENTPASSWD=${ESB_PROFTPD_PERSISTENTPASSWD:-"off"}
+ESB_PROFTPD_TIMESGMT=${ESB_PROFTPD_TIMESGMT:-"off"}
+ESB_PROFTPD_DEFAULTTRANSFERMODE=${ESB_PROFTPD_DEFAULTTRANSFERMODE:-"ascii"}
+ESB_PROFTPD_ALLOWOVERWRITE=${ESB_PROFTPD_ALLOWOVERWRITE:-"on"}
+ESB_PROFTPD_DELETEABORTEDSTORES=${ESB_PROFTPD_DELETEABORTEDSTORES:-"off"}
+ESB_PROFTPD_TRANSFERLOG=${ESB_PROFTPD_TRANSFERLOG:-"/var/log/proftpd/xferlog"}
+ESB_PROFTPD_MODQUOTATAB_QUOTAENGINE=${ESB_PROFTPD_MODQUOTATAB_QUOTAENGINE:-"off"}
+ESB_PROFTPD_MODRATIO_RATIOS=${ESB_PROFTPD_MODRATIO_RATIOS:-"off"}
+ESB_PROFTPD_MODFACL_FACLENGINE=${ESB_PROFTPD_MODFACL_FACLENGINE:-"on"}
+ESB_PROFTPD_MODDELAY_DELAYENGINE=${ESB_PROFTPD_MODDELAY_DELAYENGINE:-"on"}
+ESB_PROFTPD_MODCTRLS_CONTROLSENGINE=${ESB_PROFTPD_MODCTRLS_CONTROLSENGINE:-"on"}
+ESB_PROFTPD_MODCTRLS_CONTROLSMAXCLIENTS=${ESB_PROFTPD_MODCTRLS_CONTROLSMAXCLIENTS:-"2"}
+ESB_PROFTPD_MODCTRLS_CONTROLSLOG=${ESB_PROFTPD_MODCTRLS_CONTROLSLOG:-"/var/log/proftpd/controls.log"}
+ESB_PROFTPD_MODCTRLS_CONTROLSINTERVAL=${ESB_PROFTPD_MODCTRLS_CONTROLSINTERVAL:-"5"}
+ESB_PROFTPD_MODCTRLS_CONTROLSSOCKET=${ESB_PROFTPD_MODCTRLS_CONTROLSSOCKET:-"/var/run/proftpd/proftpd.sock"}
+ESB_PROFTPD_MODCTRLSADMIN_ADMINCONTROLSENGINE=${ESB_PROFTPD_MODCTRLSADMIN_ADMINCONTROLSENGINE:-"off"}
+ESB_PROFTPD_MODTLS_CONFIG=${ESB_PROFTPD_MODTLS_CONFIG:-"/etc/proftpd/tls.conf"}
+ESB_PROFTPD_MODVROOT_VROOTENGINE=${ESB_PROFTPD_MODVROOT_VROOTENGINE:-"on"}
+ESB_PROFTPD_MODVROOT_VROOTLOG=${ESB_PROFTPD_MODVROOT_VROOTLOG:-"/var/log/proftpd/vroot.log"}
+
+# Create /etc/proftpd/proftpd.conf configuration
+xmlstarlet sel -t \
+  -o "Include /etc/proftpd/modules.conf" -n \
+  -o "LoadModule mod_vroot.c" -n \
+  -o "UseIPv6 ${ESB_PROFTPD_USEIPV6}" -n \
+  -v "concat('ServerName \"',//system/network/hostname,'\"')" -n \
+  -o "ServerType standalone" -n \
+  -o "DeferWelcome ${ESB_PROFTPD_DEFERWELCOME}" -n \
+  -o "MultilineRFC2228 ${ESB_PROFTPD_MULTILINERFC2228}" -n \
+  -o "DefaultServer ${ESB_PROFTPD_DEFAULTSERVER}" -n \
+  -o "ShowSymlinks ${ESB_PROFTPD_SHOWSYMLINKS}" -n \
+  -o "DisplayChdir .message true" -n \
+  -o "ListOptions \"${ESB_PROFTPD_LISTOPTIONS}\"" -n \
+  -o "MaxInstances ${ESB_PROFTPD_MAXINSTANCES}" -n \
+  -o "DenyFilter ${ESB_PROFTPD_DENYFILTER}" -n \
+  -o "AuthPAMConfig ${ESB_PROFTPD_AUTHPAMCONFIG}" -n \
+  -o "User ${ESB_PROFTPD_USER}" -n \
+  -o "Group ${ESB_PROFTPD_GROUP}" -n \
+  -o "Umask ${ESB_PROFTPD_UMASK}" -n \
+  -o "PersistentPasswd ${ESB_PROFTPD_PERSISTENTPASSWD}" -n \
+  -o "TimesGMT ${ESB_PROFTPD_TIMESGMT}" -n \
+  -o "AllowOverwrite ${ESB_PROFTPD_ALLOWOVERWRITE}" -n \
+  -o "AuthOrder ${ESB_PROFTPD_AUTHORDER}" -n \
+  -o "DefaultTransferMode ${ESB_PROFTPD_DEFAULTTRANSFERMODE}" -n \
+  -o "#SystemLog /var/log/proftpd/proftpd.log" -n \
+  -o "<IfModule mod_facl.c>" -n \
+  -o "  FACLEngine ${ESB_PROFTPD_MODFACL_FACLENGINE}" -n \
+  -o "</IfModule>" -n \
+  -o "<IfModule mod_quotatab.c>" -n \
+  -o "  QuotaEngine ${ESB_PROFTPD_MODQUOTATAB_QUOTAENGINE}" -n \
+  -o "</IfModule>" -n \
+  -o "<IfModule mod_ratio.c>" -n \
+  -o "  Ratios ${ESB_PROFTPD_MODRATIO_RATIOS}" -n \
+  -o "</IfModule>" -n \
+  -o "<IfModule mod_delay.c>" -n \
+  -o "  DelayEngine ${ESB_PROFTPD_MODDELAY_DELAYENGINE}" -n \
+  -o "</IfModule>" -n \
+  -o "<IfModule mod_ctrls.c>" -n \
+  -o "  ControlsEngine ${ESB_PROFTPD_MODCTRLS_CONTROLSENGINE}" -n \
+  -o "  ControlsMaxClients ${ESB_PROFTPD_MODCTRLS_CONTROLSMAXCLIENTS}" -n \
+  -o "  ControlsLog ${ESB_PROFTPD_MODCTRLS_CONTROLSLOG}" -n \
+  -o "  ControlsInterval ${ESB_PROFTPD_MODCTRLS_CONTROLSINTERVAL}" -n \
+  -o "  ControlsSocket ${ESB_PROFTPD_MODCTRLS_CONTROLSSOCKET}" -n \
+  -o "</IfModule>" -n \
+  -o "<IfModule mod_ctrls_admin.c>" -n \
+  -o "  AdminControlsEngine ${ESB_PROFTPD_MODCTRLSADMIN_ADMINCONTROLSENGINE}" -n \
+  -o "</IfModule>" -n \
+  -o "<IfModule mod_vroot.c>" -n \
+  -o "  VRootEngine ${ESB_PROFTPD_MODVROOT_VROOTENGINE}" -n \
+  -o "  VRootLog ${ESB_PROFTPD_MODVROOT_VROOTLOG}" -n \
+  -o "</IfModule>" -n \
+  -m "//services/ftp" \
+	  -i "modules/mod_tls/enable[. = '1']" \
+		  -o "Include ${ESB_PROFTPD_MODTLS_CONFIG}" -n \
+	  -b \
+	  -v "concat('Port ',port)" -n \
+	  -i "transferlog[. = '0']" -o "TransferLog NONE" -n -b \
+	  -i "transferlog[. = '1']" -o "TransferLog ${ESB_PROFTPD_TRANSFERLOG}" -n -b \
+	  -i "identlookups[. = '0']" -o "IdentLookups off" -n -b \
+	  -i "identlookups[. = '1']" -o "IdentLookups on" -n -b \
+	  -i "usereversedns[. = '0']" -o "UseReverseDNS off" -n -b \
+	  -i "usereversedns[. = '1']" -o "UseReverseDNS on" -n -b \
+	  -v "concat('TimeoutIdle ',timeoutidle)" -n \
+	  -o "TimeoutNoTransfer ${ESB_PROFTPD_TIMEOUTNOTRANSFER}" -n \
+	  -o "TimeoutStalled ${ESB_PROFTPD_TIMEOUTSTALLED}" -n \
+	  -i "usepassiveports[. = '1']" -v "concat('PassivePorts ',minpassiveports,' ',maxpassiveports)" -n -b \
+	  -i "string-length(masqueradeaddress) > 0" \
+		  -v "concat('MasqueradeAddress ',masqueradeaddress)" -n \
+		  -i "dynmasqrefresh[. > '0']" \
+			  -o "<IfModule mod_dynmasq.c>" -n \
+			  -v "concat('  DynMasqRefresh ',dynmasqrefresh)" -n \
+			  -o "</ifModule>" -n \
+		  -b \
+	  -b \
+	  -i "limittransferrate[. = '1']" \
+		  -i "maxuptransferrate[. > '0']" -v "concat('TransferRate STOR ',maxuptransferrate)" -n -b \
+		  -i "maxdowntransferrate[. > '0']" -v "concat('TransferRate RETR ',maxdowntransferrate)" -n -b \
+	  -b \
+	  -i "allowrestart[. = '1']" \
+		  -o "AllowRetrieveRestart on" -n \
+		  -o "AllowStoreRestart on" -n \
+	  -b \
+	  -o "DeleteAbortedStores ${ESB_PROFTPD_DELETEABORTEDSTORES}" -n \
+	  -i "allowforeignaddress[. = '1']" -o "AllowForeignAddress on" -n -b \
+	  -i "maxconnectionsperhost[. > '0']" -v "concat('MaxConnectionsPerHost ',maxconnectionsperhost)" -n -b \
+	  -i "string-length(extraoptions) > 0" -v extraoptions -n -b \
+	  -o "<Directory />" -n \
+	  -o "  HideFiles (welcome.msg)" -n \
+	  -o "</Directory>" -n \
+	  -i "anonymous[. = '1']" \
+		  -o "<Anonymous ~ftp>" -n \
+		  -o "  User ftp" -n \
+		  -o "  Group nogroup" -n \
+		  -o "  UserAlias anonymous ftp" -n \
+		  -o "  DirFakeUser on ftp" -n \
+		  -o "  DirFakeGroup on ftp" -n \
+		  -o "  RequireValidShell off" -n \
+		  -o "  <Directory *>" -n \
+		  -o "    HideFiles (welcome.msg)" -n \
+		  -o "    HideNoAccess on" -n \
+		  -o "    <Limit WRITE>" -n \
+		  -o "      DenyAll" -n \
+		  -o "    </Limit>" -n \
+		  -o "  </Directory>" -n \
+		  -o "</Anonymous>" -n \
+	  -b \
+  -b \
+  ${ESB_CONFIG_FILE} | xmlstarlet unesc > ${ESB_PROFTPD_CONFIG}
+
+# Is it allowed to login as superuser directly?
+rootlogin=$(esb_config_get "//services/ftp/rootlogin")
+
+# Process FTP shares.
+index=$(esb_config_get_count "//services/ftp/shares/share")
+while [ ${index} -gt 0 ]; do
+	# Get the UUID of the current share.
+	uuid=$(esb_config_get "//services/ftp/shares/share[position()=${index}]/uuid")
+
+	limitall_allowuser=""
+	limitall_allowgroup=""
+	limitread_allowuser=""
+	limitread_allowgroup=""
+
+	# Is it allowed to login as superuser directly?
+	if [ ${rootlogin} -eq 1 ]; then
+		limitall_allowuser="root"
+		limitall_allowgroup="root"
+	fi
+
+	# Get the shared folder reference and path.
+	sfref=$(esb_config_get "//services/ftp/shares/share[uuid='${uuid}']/sharedfolderref")
+	sfname=$(esb_get_sharedfolder_name "${sfref}")
+	sfpath=$(esb_get_sharedfolder_path "${sfref}")
+
+	# Get shared folder user privileges.
+	privileges=$(xmlstarlet sel -t -m "//system/shares/sharedfolder[uuid='${sfref}']/privileges/privilege[type='user']" \
+	  -v "concat(perms,':',name)" -n \
+	  ${ESB_CONFIG_FILE} | xmlstarlet unesc)
+	IFS="$(printf '\n+')"
+	for privilege in ${privileges}; do
+		[ -z "${privilege}" ] && continue
+		perms=${privilege%:*}
+		name=${privilege#*:}
+		# Skip 'No access' entries
+		[ ${perms} -eq 0 ] && continue
+		# Append user to list
+		case ${perms} in
+		5)
+			[ -n "${limitread_allowuser}" ] && limitread_allowuser="${limitread_allowuser},";
+			limitread_allowuser="${limitread_allowuser}${name}";;
+		7)
+			[ -n "${limitall_allowuser}" ] && limitall_allowuser="${limitall_allowuser},";
+			limitall_allowuser="${limitall_allowuser}${name}";;
+		esac
+	done
+	unset IFS
+
+	# Get shared folder group privileges.
+	privileges=$(xmlstarlet sel -t -m "//system/shares/sharedfolder[uuid='${sfref}']/privileges/privilege[type='group']" \
+	  -v "concat(perms,':',name)" -n \
+	  ${ESB_CONFIG_FILE} | xmlstarlet unesc)
+	IFS="$(printf '\n+')"
+	for privilege in ${privileges}; do
+		[ -z "${privilege}" ] && continue
+		perms=${privilege%:*}
+		name=${privilege#*:}
+		# Skip 'No access' entries.
+		[ ${perms} -eq 0 ] && continue
+		# Append group to list.
+		case ${perms} in
+		5)
+			[ -n "${limitread_allowgroup}" ] && limitread_allowgroup="${limitread_allowgroup},";
+			limitread_allowgroup="${limitread_allowgroup}${name}";;
+		7)
+			[ -n "${limitall_allowgroup}" ] && limitall_allowgroup="${limitall_allowgroup},";
+			limitall_allowgroup="${limitall_allowgroup}${name}";;
+		esac
+	done
+	unset IFS
+
+	cat <<EOF >> ${ESB_PROFTPD_CONFIG}
+<IfModule mod_vroot.c>
+  VRootAlias "$(esb_rtrim -c "/" "${sfpath}")" "${sfname}"
+</IfModule>
+<Directory /${sfname}>
+  <Limit ALL>
+EOF
+	[ -n "${limitall_allowuser}" ] && echo "    AllowUser OR ${limitall_allowuser}" >> ${ESB_PROFTPD_CONFIG}
+	[ -n "${limitall_allowgroup}" ] && echo "    AllowGroup OR ${limitall_allowgroup}" >> ${ESB_PROFTPD_CONFIG}
+	cat <<EOF >> ${ESB_PROFTPD_CONFIG}
+    DenyAll
+  </Limit>
+  <Limit READ DIRS>
+EOF
+	[ -n "${limitall_allowuser}" ] && echo "    AllowUser OR ${limitall_allowuser}" >> ${ESB_PROFTPD_CONFIG}
+	[ -n "${limitall_allowgroup}" ] && echo "    AllowGroup OR ${limitall_allowgroup}" >> ${ESB_PROFTPD_CONFIG}
+	[ -n "${limitread_allowuser}" ] && echo "    AllowUser OR ${limitread_allowuser}" >> ${ESB_PROFTPD_CONFIG}
+	[ -n "${limitread_allowgroup}" ] && echo "    AllowGroup OR ${limitread_allowgroup}" >> ${ESB_PROFTPD_CONFIG}
+	cat <<EOF >> ${ESB_PROFTPD_CONFIG}
+    DenyAll
+  </Limit>
+EOF
+	xmlstarlet sel -t -m "//services/ftp/shares/share[uuid='${uuid}']" \
+	  -i "string-length(extraoptions) > 0" -v extraoptions -n -b \
+	  ${ESB_CONFIG_FILE} | xmlstarlet unesc >> ${ESB_PROFTPD_CONFIG}
+	cat <<EOF >> ${ESB_PROFTPD_CONFIG}
+</Directory>
+EOF
+
+	index=$(( ${index} - 1 ))
+done
+
+# Ensure the transfer log file exists, even when the option is disabled.
+# This will prevent error messages in the system log WebGUI.
+touch "${ESB_PROFTPD_TRANSFERLOG}"
+
+# Add additional extensions to the configuration file.
+run-parts --exit-on-error ${ESB_PROFTPD_EXTENSIONS_DIR}

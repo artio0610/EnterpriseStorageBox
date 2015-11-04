@@ -1,0 +1,47 @@
+#!/bin/sh
+#
+# This file is part of EnterpriSestorageBox.
+#
+# @license   http://www.gnu.org/licenses/gpl.html GPL Version 3
+# @author   Artur Osinski-Stachowicz <artio0610@gmail.com>
+# @copyright Copyright (c) 2009-2015 Artur Osinski-Stachowicz
+#
+# EnterpriSestorageBox is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# any later version.
+#
+# EnterpriSestorageBox is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with EnterpriSestorageBox. If not, see <http://www.gnu.org/licenses/>.
+
+set -e
+
+. /etc/default/enterprisestoragebox
+. /usr/share/enterprisestoragebox/scripts/helper-functions
+
+ESB_TFTPD_DEFAULT=${ESB_TFTPD_DEFAULT:-"/etc/default/tftpd-hpa"}
+ESB_TFTPD_USERNAME=${ESB_TFTPD_USERNAME:-"tftp"}
+ESB_TFTPD_OPTIONS=${ESB_TFTPD_OPTIONS:-"--secure"}
+
+# Workaround for bug http://bugs.debian.org/cgi-bin/bugreport.cgi?bug=544089
+if ! esb_is_ipv6_enabled; then
+	ESB_TFTPD_OPTIONS="--ipv4 ${ESB_TFTPD_OPTIONS}"
+fi
+
+# Create '/etc/default/tftpd-hpa' file
+xmlstarlet sel -t -m "//services/tftp" \
+  -o "TFTP_OPTIONS=\"${ESB_TFTPD_OPTIONS}" \
+  -v "concat(' --retransmit ',retransmit)" \
+  -i "allownewfiles[. = '1']" -o " --create" -b \
+  -i "string-length(blocksize) > 0" -v "concat(' --blocksize ',blocksize)" -b \
+  -i "string-length(extraoptions) > 0" -v "concat(' ',extraoptions)" -b \
+  -o "\"" -n \
+  -o "TFTP_USERNAME=\"${ESB_TFTPD_USERNAME}\"" -n \
+  -o "TFTP_DIRECTORY=\"" ${ESB_XMLSTARLET_GET_SHAREDFOLDER_PATH} -o "\"" -n \
+  -v "concat('TFTP_ADDRESS=\"0.0.0.0:',port,'\"')" \
+  ${ESB_CONFIG_FILE} | xmlstarlet unesc > ${ESB_TFTPD_DEFAULT}
