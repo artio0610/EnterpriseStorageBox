@@ -1,0 +1,83 @@
+#!/bin/sh
+#
+# This file is part of EnterpriSestorageBox.
+#
+# @license   http://www.gnu.org/licenses/gpl.html GPL Version 3
+# @author   Artur Osinski-Stachowicz <artio0610@gmail.com>
+# @copyright Copyright (c) 2009-2015 Artur Osinski-Stachowicz
+#
+# EnterpriSestorageBox is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# any later version.
+#
+# EnterpriSestorageBox is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with EnterpriSestorageBox. If not, see <http://www.gnu.org/licenses/>.
+
+set -e
+
+. /etc/default/enterprisestoragebox
+. /usr/share/enterprisestoragebox/scripts/helper-functions
+
+ESB_AVAHIDAEMON_NFSSERVICE=${ESB_AVAHIDAEMON_NFSSERVICE:-"/etc/avahi/services/nfs*.service"}
+ESB_AVAHIDAEMON_NFSSERVICE_PORT=${ESB_AVAHIDAEMON_NFSSERVICE_PORT:-"2049"}
+
+# Is the service enabled? Announce this service via DNS-SD?
+rm -f ${ESB_AVAHIDAEMON_NFSSERVICE}
+[ "$(esb_config_get "//services/nfs/enable")" != "1" -o "$(esb_config_get "//services/zeroconf/services/service[id='nfs']/enable")" != "1" ] && exit 0
+
+# Announce duplicate shares only once (emulate SQL 'DISTINCT' to filter
+# duplicates).
+name=$(esb_config_get "//services/zeroconf/services/service[id='nfs']/name")
+xmlstarlet sel -t -m "//services/nfs/shares/share[not(sharedfolderref=preceding-sibling::*/sharedfolderref)]" \
+  -v sharedfolderref -i "position() != last()" -n -b \
+  ${ESB_CONFIG_FILE} | xmlstarlet unesc |
+  while read sfref; do
+	  sfname=$(esb_get_sharedfolder_name ${sfref})
+	  filename="/etc/avahi/services/nfs-${sfname}.service"
+	  cat <<EOF > ${filename}
+<?xml version="1.0" standalone='no'?>
+<!DOCTYPE service-group SYSTEM "avahi-service.dtd">
+<service-group>
+  <name replace-wildcards="yes">${name} - ${sfname}</name>
+  <service>
+    <type>_nfs._tcp</type>
+    <port>${ESB_AVAHIDAEMON_NFSSERVICE_PORT}</port>
+    <txt-record>path=${ESB_NFSD_EXPORT_DIR}/${sfname}</txt-record>
+  </service>
+</service-group>
+EOF
+  done
+
+# Create '/etc/avahi/services/nfs.service' file.
+#cat <<EOF > ${ESB_AVAHIDAEMON_NFSSERVICE}
+#<?xml version="1.0" standalone='no'?>
+#<!DOCTYPE service-group SYSTEM "avahi-service.dtd">
+#<service-group>
+#  <name replace-wildcards="yes">${ESB_AVAHIDAEMON_NFSSERVICE_NAME}</name>
+#EOF
+
+# Announce duplicate shares only once (emulate SQL 'DISTINCT' to filter
+# duplicates).
+#xmlstarlet sel -t -m "//services/nfs/shares/share[not(sharedfolderref=preceding-sibling::*/sharedfolderref)]" \
+#  -v sharedfolderref -i "position() != last()" -n -b \
+#  ${ESB_CONFIG_FILE} | xmlstarlet unesc |
+#  while read sfref; do
+#	  sfname=$(esb_get_sharedfolder_name ${sfref})
+#cat <<EOF >> ${ESB_AVAHIDAEMON_NFSSERVICE}
+#  <service>
+#    <type>_nfs._tcp</type>
+#    <port>${ESB_AVAHIDAEMON_NFSSERVICE_PORT}</port>
+#    <txt-record>path=${ESB_NFSD_EXPORT_DIR}/${sfname}</txt-record>
+#  </service>
+#EOF
+#  done
+
+#cat <<EOF >> ${ESB_AVAHIDAEMON_NFSSERVICE}
+#</service-group>
+#EOF
