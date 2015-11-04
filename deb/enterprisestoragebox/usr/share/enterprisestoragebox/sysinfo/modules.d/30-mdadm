@@ -1,0 +1,39 @@
+#!/bin/sh
+#
+# This file is part of EnterpriSestorageBox.
+#
+# @license   http://www.gnu.org/licenses/gpl.html GPL Version 3
+# @author   Artur Osinski-Stachowicz <artio0610@gmail.com>
+# @copyright Copyright (c) 2009-2015 Artur Osinski-Stachowicz
+#
+# EnterpriSestorageBox is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# any later version.
+#
+# EnterpriSestorageBox is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with EnterpriSestorageBox. If not, see <http://www.gnu.org/licenses/>.
+
+set -e
+
+. /usr/share/enterprisestoragebox/sysinfo/functions
+
+ESB_MDADM_CONFIG=${ESB_MDADM_CONFIG:-"/etc/mdadm/mdadm.conf"}
+
+esb_sysinfo_begin_msg "Linux Software RAID"
+# Check if a software RAID is used
+if cat /proc/mdstat | egrep "^md"; then
+	esb_sysinfo_msg </proc/mdstat
+	esb_sysinfo_msg_separator
+	esb_sysinfo_msg <${ESB_MDADM_CONFIG}
+else
+	esb_sysinfo_msg "Not used"
+fi
+esb_sysinfo_end_msg
+
+exit 0
