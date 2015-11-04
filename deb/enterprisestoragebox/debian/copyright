@@ -1,0 +1,521 @@
+Format: http://dep.debian.net/deps/dep5
+Upstream-Contact:  Artur Osinski-Stachowicz <artio0610@gmail.com>
+Source: http://www.enterprisestoragebox.org
+
+Files: *
+Copyright: 2009-2015  Artur Osinski-Stachowicz <artio0610@gmail.com>
+License: GPL-3
+
+Files: /var/www/enterprisestoragebox/images/ftp.png
+       /var/www/enterprisestoragebox/images/ftp.svg
+Copyright: WebHostingHub <http://www.webhostinghub.com>
+License: CC-BY-3.0
+
+Files: /var/www/enterprisestoragebox/images/terminal.png
+       /var/www/enterprisestoragebox/images/terminal.png
+Copyright: WebHostingHub <http://www.webhostinghub.com>
+License: CC-BY-3.0
+
+Files: /var/www/enterprisestoragebox/images/shutdown.png
+       /var/www/enterprisestoragebox/images/shutdown.svg
+Copyright: WebHostingHub <http://www.webhostinghub.com>
+License: CC-BY-3.0
+
+Files: /var/www/enterprisestoragebox/images/network.png
+       /var/www/enterprisestoragebox/images/network.svg
+Copyright: WebHostingHub <http://www.webhostinghub.com>
+License: CC-BY-3.0
+
+Files: /var/www/enterprisestoragebox/images/hdd.png
+       /var/www/enterprisestoragebox/images/hdd.svg
+Copyright: WebHostingHub <http://www.webhostinghub.com>
+License: CC-BY-3.0
+
+Files: /var/www/enterprisestoragebox/images/battery.png
+       /var/www/enterprisestoragebox/images/battery.svg
+Copyright: WebHostingHub <http://www.webhostinghub.com>
+License: CC-BY-3.0
+
+Files: /var/www/enterprisestoragebox/images/clock.png
+       /var/www/enterprisestoragebox/images/clock.svg
+Copyright: WebHostingHub <http://www.webhostinghub.com>
+License: CC-BY-3.0
+
+Files: /var/www/enterprisestoragebox/images/alarm.png
+       /var/www/enterprisestoragebox/images/alarm.svg
+Copyright: WebHostingHub <http://www.webhostinghub.com>
+License: CC-BY-3.0
+
+Files: /var/www/enterprisestoragebox/images/mail.png
+       /var/www/enterprisestoragebox/images/mail.svg
+Copyright: WebHostingHub <http://www.webhostinghub.com>
+License: CC-BY-3.0
+
+Files: /var/www/enterprisestoragebox/images/preferences.png
+       /var/www/enterprisestoragebox/images/preferences.svg
+Copyright: Keyamoon (http://keyamoon.com)
+License: CC-BY-3.0
+
+Files: /var/www/enterprisestoragebox/images/sharedfile.png
+       /var/www/enterprisestoragebox/images/sharedfile.svg
+Copyright: WebHostingHub <http://www.webhostinghub.com>
+License: CC-BY-3.0
+
+Files: /var/www/enterprisestoragebox/images/add.png
+       /var/www/enterprisestoragebox/images/add.svg
+Copyright: Keyamoon <http://icomoon.io>
+License: CC-BY-3.0
+
+Files: /var/www/enterprisestoragebox/images/delete.png
+       /var/www/enterprisestoragebox/images/delete.svg
+Copyright: Keyamoon <http://icomoon.io>
+License: CC-BY-3.0
+
+Files: /var/www/enterprisestoragebox/images/save.png
+       /var/www/enterprisestoragebox/images/save.svg
+Copyright: WebHostingHub <http://www.webhostinghub.com>
+License: CC-BY-3.0
+
+Files: /var/www/enterprisestoragebox/images/trashcan.png
+       /var/www/enterprisestoragebox/images/trashcan.svg
+Copyright: WebHostingHub <http://www.webhostinghub.com>
+License: CC-BY-3.0
+
+Files: /var/www/enterprisestoragebox/images/harddisk-smart.png
+Copyright: Oliver Scholtz (and others)
+License: GPL
+Comment: http://www.iconfinder.net/icondetails/9268/16
+
+Files: /var/www/enterprisestoragebox/images/bittorrent.png
+Copyright: Oliver Scholtz (and others)
+License: GPL
+Comment: http://www.iconfinder.net/icondetails/24363/16
+
+Files: /var/www/enterprisestoragebox/images/smb.png
+       /var/www/enterprisestoragebox/images/smb.png
+Copyright: Keyamoon (http://keyamoon.com)
+License: CC-BY-3.0
+
+Files: /var/www/enterprisestoragebox/images/lock.png
+       /var/www/enterprisestoragebox/images/lock.svg
+Copyright: Keyamoon <http://icomoon.io>
+License: CC-BY-3.0
+
+Files: /var/www/enterprisestoragebox/images/user.png
+       /var/www/enterprisestoragebox/images/user.svg
+Copyright: Daniel Bruce <http://danielbruce.se>
+License: CC-BY-SA-3.0-US
+
+Files: /var/www/enterprisestoragebox/images/group.png
+       /var/www/enterprisestoragebox/images/group.svg
+Copyright: Daniel Bruce <http://danielbruce.se>
+License: CC-BY-SA-3.0-US
+
+Files: /var/www/enterprisestoragebox/images/about.png
+       /var/www/enterprisestoragebox/images/about.svg
+Copyright: Daniel Bruce <http://danielbruce.se>
+License: CC-BY-SA-3.0-US
+
+Files: /var/www/enterprisestoragebox/images/rsync.png
+Copyright: WebHostingHub <http://www.webhostinghub.com>
+License: CC-BY-3.0
+
+Files: /var/www/enterprisestoragebox/images/puzzle.png
+       /var/www/enterprisestoragebox/images/puzzle.svg
+Copyright: WebHostingHub <http://www.webhostinghub.com>
+License: CC-BY-3.0
+
+Files: /var/www/enterprisestoragebox/images/download.png
+       /var/www/enterprisestoragebox/images/download.svg
+Copyright: WebHostingHub <http://www.webhostinghub.com>
+License: CC-BY-3.0
+
+Files: /var/www/enterprisestoragebox/images/upload.png
+       /var/www/enterprisestoragebox/images/upload.svg
+Copyright: WebHostingHub <http://www.webhostinghub.com>
+License: CC-BY-3.0
+
+Files: /var/www/enterprisestoragebox/images/no.png
+       /var/www/enterprisestoragebox/images/no.svg
+Copyright: WebHostingHub <http://www.webhostinghub.com>
+License: CC-BY-3.0
+
+Files: /var/www/enterprisestoragebox/images/yes.png
+       /var/www/enterprisestoragebox/images/yes.svg
+Copyright: WebHostingHub <http://www.webhostinghub.com>
+License: CC-BY-3.0
+
+Files: /var/www/enterprisestoragebox/images/software.png
+       /var/www/enterprisestoragebox/images/software.svg
+Copyright: WebHostingHub <http://www.webhostinghub.com>
+License: CC-BY-3.0
+
+Files: /var/www/enterprisestoragebox/images/arrow-up.png
+       /var/www/enterprisestoragebox/images/arrow-up.svg
+Copyright: WebHostingHub <http://www.webhostinghub.com>
+License: CC-BY-3.0
+
+Files: /var/www/enterprisestoragebox/images/arrow-down.png
+       /var/www/enterprisestoragebox/images/arrow-down.svg
+Copyright: WebHostingHub <http://www.webhostinghub.com>
+License: CC-BY-3.0
+
+Files: /var/www/enterprisestoragebox/images/snmp.png
+       /var/www/enterprisestoragebox/images/snmp.svg
+Copyright: David Ferreira (http://cargocollective.com/davidferreira)
+License: CC-BY-SA-3.0
+
+Files: /var/www/enterprisestoragebox/images/error.png
+       /var/www/enterprisestoragebox/images/error.png
+Copyright: Volker Theile
+License: CC-BY-3.0
+Comment: Based on WebHostingHub
+
+Files: /var/www/enterprisestoragebox/images/warn.png
+       /var/www/enterprisestoragebox/images/warn.png
+Copyright: Volker Theile
+License: CC-BY-3.0
+Comment: Based on alert.svg from WebHostingHub
+
+Files: /var/www/enterprisestoragebox/images/logout.png
+       /var/www/enterprisestoragebox/images/logout.svg
+Copyright: WebHostingHub <http://www.webhostinghub.com>
+License: CC-BY-3.0
+
+Files: /var/www/enterprisestoragebox/images/report.png
+Copyright: interactivemania <http://www.defaulticon.com>
+License: CC-BY-ND-3.0
+
+Files: /var/www/enterprisestoragebox/images/edit.png
+       /var/www/enterprisestoragebox/images/edit.svg
+Copyright: WebHostingHub <http://www.webhostinghub.com>
+License: CC-BY-3.0
+
+Files: /var/www/enterprisestoragebox/images/info.png
+       /var/www/enterprisestoragebox/images/info.svg
+Copyright: Daniel Bruce <http://danielbruce.se>
+License: CC-BY-SA-3.0-US
+
+Files: /var/www/enterprisestoragebox/images/raid.png
+       /var/www/enterprisestoragebox/images/raid.svg
+Copyright: WebHostingHub <http://www.webhostinghub.com>
+License: CC-BY-3.0
+
+Files: /var/www/enterprisestoragebox/images/shutdown_64.png
+       /var/www/enterprisestoragebox/images/shutdown_64.png
+Copyright: Volker Theile
+License: CC-BY-3.0
+Comment: Based on shutdown.svg from WebHostingHub
+
+Files: /var/www/enterprisestoragebox/images/details.png
+       /var/www/enterprisestoragebox/images/details.svg
+Copyright: WebHostingHub <http://www.webhostinghub.com>
+License: CC-BY-3.0
+
+Files: /var/www/enterprisestoragebox/images/filesystem.png
+       /var/www/enterprisestoragebox/images/filesystem.svg
+Copyright: WebHostingHub <http://www.webhostinghub.com>
+License: CC-BY-3.0
+
+Files: /var/www/enterprisestoragebox/images/certificate.png
+       /var/www/enterprisestoragebox/images/certificate.svg
+Copyright: WebHostingHub <http://www.webhostinghub.com>
+License: CC-BY-3.0
+
+Files: /var/www/enterprisestoragebox/images/reboot.png
+       /var/www/enterprisestoragebox/images/reboot.svg
+Copyright: WebHostingHub <http://www.webhostinghub.com>
+License: CC-BY-3.0
+
+Files: /var/www/enterprisestoragebox/images/switch_on.png
+       /var/www/enterprisestoragebox/images/switch_on.svg
+Copyright: Volker Theile
+License: permissive
+ .Free for commercial use
+Comment: www.enterprisestoragebox.org
+
+Files: /var/www/enterprisestoragebox/images/switch_off.png
+       /var/www/enterprisestoragebox/images/switch_off.svg
+Copyright: Volker Theile
+License: permissive
+ .Free for commercial use
+Comment: www.enterprisestoragebox.org
+
+Files: /var/www/enterprisestoragebox/images/switch_green.png
+       /var/www/enterprisestoragebox/images/switch_green.svg
+Copyright: Volker Theile
+License: permissive
+ .Free for commercial use
+Comment: www.enterprisestoragebox.org
+
+Files: /var/www/enterprisestoragebox/images/switch_red.png
+       /var/www/enterprisestoragebox/images/switch_red.svg
+Copyright: Volker Theile
+License: permissive
+ .Free for commercial use
+Comment: www.enterprisestoragebox.org
+
+Files: /var/www/enterprisestoragebox/images/led_blue.png
+       /var/www/enterprisestoragebox/images/led_blue.svg
+Copyright: Volker Theile
+License: permissive
+ .Free for commercial use
+Comment: www.enterprisestoragebox.org
+
+Files: /var/www/enterprisestoragebox/images/led_gray.png
+       /var/www/enterprisestoragebox/images/led_gray.svg
+Copyright: Volker Theile
+License: permissive
+ Free for commercial use.
+Comment: www.enterprisestoragebox.org
+
+Files: /var/www/enterprisestoragebox/images/led_green.png
+       /var/www/enterprisestoragebox/images/led_green.svg
+Copyright: Volker Theile
+License: permissive
+ Free for commercial use.
+Comment: www.enterprisestoragebox.org
+
+Files: /var/www/enterprisestoragebox/images/led_red.png
+       /var/www/enterprisestoragebox/images/led_red.svg
+Copyright: Volker Theile
+License: permissive
+ .Free for commercial use
+Comment: www.enterprisestoragebox.org
+
+Files: /var/www/enterprisestoragebox/images/donate.png
+       /var/www/enterprisestoragebox/images/donate.svg
+Copyright: Keyamoon (http://keyamoon.com)
+License: CC-BY-3.0
+
+Files: /var/www/enterprisestoragebox/images/nfs.png
+       /var/www/enterprisestoragebox/images/nfs.svg
+Copyright: WebHostingHub <http://www.webhostinghub.com>
+License: CC-BY-3.0
+
+Files: /var/www/enterprisestoragebox/images/erase.png
+       /var/www/enterprisestoragebox/images/erase.svg
+Copyright: WebHostingHub <http://www.webhostinghub.com>
+License: CC-BY-3.0
+
+Files: /var/www/enterprisestoragebox/images/add-trigger.png
+       /var/www/enterprisestoragebox/images/folder-trigger.png
+       /var/www/enterprisestoragebox/images/password-trigger.png
+Copyright: Volker Theile, based on WebHostingHub and ExtJS trigger template
+License: GPL
+
+Files: /var/www/enterprisestoragebox/images/wrench.png
+       /var/www/enterprisestoragebox/images/wrench.png
+Copyright: Keyamoon <http://icomoon.io>
+License: CC-BY-3.0
+
+Files: /var/www/enterprisestoragebox/images/search.png
+       /var/www/enterprisestoragebox/images/search.svg
+Copyright: Keyamoon <http://icomoon.io>
+License: CC-BY-3.0
+
+Files: /var/www/enterprisestoragebox/images/menu.png
+       /var/www/enterprisestoragebox/images/menu.svg
+Copyright: WebHostingHub <http://www.webhostinghub.com>
+License: CC-BY-3.0
+
+Files: /var/www/enterprisestoragebox/images/changelog.png
+Copyright: Volker Theile
+License: permissive
+ Free for commercial use.
+Comment: www.enterprisestoragebox.org
+
+Files: /var/www/enterprisestoragebox/images/refresh.png
+       /var/www/enterprisestoragebox/images/refresh.svg
+Copyright: WebHostingHub <http://www.webhostinghub.com>
+License: CC-BY-3.0
+
+Files: /var/www/enterprisestoragebox/images/refresh.gif
+License: permissive
+ Generated gifs are totally free for use.
+Comment: http://www.ajaxload.info
+
+Files: /var/www/enterprisestoragebox/images/access.png
+       /var/www/enterprisestoragebox/images/access.svg
+Copyright: Keyamoon <http://icomoon.io>
+License: CC-BY-3.0
+
+Files: /var/www/enterprisestoragebox/images/eject.png
+       /var/www/enterprisestoragebox/images/eject.svg
+Copyright: Keyamoon <http://icomoon.io>
+License: CC-BY-3.0
+
+Files: /var/www/enterprisestoragebox/images/play.png
+       /var/www/enterprisestoragebox/images/play.svg
+Copyright: Keyamoon <http://icomoon.io>
+License: CC-BY-3.0
+
+Files: /var/www/enterprisestoragebox/images/pause.png
+       /var/www/enterprisestoragebox/images/pause.svg
+Copyright: Keyamoon <http://icomoon.io>
+License: CC-BY-3.0
+
+Files: /var/www/enterprisestoragebox/images/expand.png
+       /var/www/enterprisestoragebox/images/expand.svg
+Copyright: Keyamoon <http://icomoon.io>
+License: CC-BY-3.0
+
+Files: /var/www/enterprisestoragebox/images/shrink.png
+       /var/www/enterprisestoragebox/images/shrink.svg
+Copyright: Keyamoon <http://icomoon.io>
+License: CC-BY-3.0
+
+Files: /var/www/enterprisestoragebox/images/aid.png
+       /var/www/enterprisestoragebox/images/aid.svg
+Copyright: Keyamoon <http://icomoon.io>
+License: CC-BY-3.0
+
+Files: /var/www/enterprisestoragebox/images/help.png
+       /var/www/enterprisestoragebox/images/help.svg
+Copyright: Daniel Bruce <http://danielbruce.se>
+License: CC-BY-SA-3.0-US
+
+Files: /var/www/enterprisestoragebox/images/statistics.png
+       /var/www/enterprisestoragebox/images/statistics.svg
+Copyright: Daniel Bruce <http://danielbruce.se>
+License: CC-BY-SA-3.0-US
+
+Files: /var/www/enterprisestoragebox/images/pulse.png
+       /var/www/enterprisestoragebox/images/pulse.svg
+Copyright: WebHostingHub <http://www.webhostinghub.com>
+License: CC-BY-3.0
+
+Files: /var/www/enterprisestoragebox/images/logs.png
+       /var/www/enterprisestoragebox/images/logs.svg
+Copyright: WebHostingHub <http://www.webhostinghub.com>
+License: CC-BY-3.0
+
+Files: /var/www/enterprisestoragebox/images/tftp.png
+       /var/www/enterprisestoragebox/images/tftp.svg
+Copyright: David Ferreira (http://cargocollective.com/davidferreira)
+License: CC-BY-SA-3.0
+
+Files: /var/www/enterprisestoragebox/images/folder.png
+       /var/www/enterprisestoragebox/images/folder.svg
+Copyright: WebHostingHub <http://www.webhostinghub.com>
+License: CC-BY-3.0
+
+Files: /var/www/enterprisestoragebox/images/folder-open.png
+       /var/www/enterprisestoragebox/images/folder-open.svg
+Copyright: WebHostingHub <http://www.webhostinghub.com>
+License: CC-BY-3.0
+
+Files: /var/www/enterprisestoragebox/images/aletr.png
+       /var/www/enterprisestoragebox/images/alert.svg
+Copyright: WebHostingHub <http://www.webhostinghub.com>
+License: CC-BY-3.0
+
+Files: /var/www/enterprisestoragebox/images/checkmark.png
+       /var/www/enterprisestoragebox/images/checkmark.svg
+Copyright: WebHostingHub <http://www.webhostinghub.com>
+License: CC-BY-3.0
+
+Files: /var/www/enterprisestoragebox/images/minus.png
+       /var/www/enterprisestoragebox/images/minus.svg
+Copyright: WebHostingHub <http://www.webhostinghub.com>
+License: CC-BY-3.0
+
+Files: /var/www/enterprisestoragebox/images/undo.png
+       /var/www/enterprisestoragebox/images/undo.svg
+Copyright: WebHostingHub <http://www.webhostinghub.com>
+License: CC-BY-3.0
+
+Files: /var/www/enterprisestoragebox/images/home.png
+       /var/www/enterprisestoragebox/images/home.svg
+Copyright: WebHostingHub <http://www.webhostinghub.com>
+License: CC-BY-3.0
+
+Files: /var/www/enterprisestoragebox/images/grid.png
+       /var/www/enterprisestoragebox/images/grid.svg
+Copyright: WebHostingHub <http://www.webhostinghub.com>
+License: CC-BY-3.0
+
+Files: /var/www/enterprisestoragebox/images/icon-info.svg
+Copyright: WebHostingHub <http://www.webhostinghub.com>
+License: CC-BY-3.0
+
+Files: /var/www/enterprisestoragebox/images/icon-warning.svg
+Copyright: WebHostingHub <http://www.webhostinghub.com>
+License: CC-BY-3.0
+
+Files: /var/www/enterprisestoragebox/images/icon-question.svg
+Copyright: WebHostingHub <http://www.webhostinghub.com>
+License: CC-BY-3.0
+
+Files: /var/www/enterprisestoragebox/images/icon-error.svg
+Copyright: WebHostingHub <http://www.webhostinghub.com>
+License: CC-BY-3.0
+
+Files: /var/www/enterprisestoragebox/images/share.png
+       /var/www/enterprisestoragebox/images/share.svg
+Copyright: WebHostingHub <http://www.webhostinghub.com>
+License: CC-BY-3.0
+
+Files: /var/www/enterprisestoragebox/images/globe.png
+       /var/www/enterprisestoragebox/images/globe.svg
+Copyright: WebHostingHub <http://www.webhostinghub.com>
+License: CC-BY-3.0
+
+Files: /var/www/enterprisestoragebox/images/page-first.png
+       /var/www/enterprisestoragebox/images/page-first.svg
+Copyright: WebHostingHub <http://www.webhostinghub.com>
+License: CC-BY-3.0
+
+Files: /var/www/enterprisestoragebox/images/page-last.png
+       /var/www/enterprisestoragebox/images/page-last.svg
+Copyright: WebHostingHub <http://www.webhostinghub.com>
+License: CC-BY-3.0
+
+Files: /var/www/enterprisestoragebox/images/page-next.png
+       /var/www/enterprisestoragebox/images/page-next.svg
+Copyright: WebHostingHub <http://www.webhostinghub.com>
+License: CC-BY-3.0
+
+Files: /var/www/enterprisestoragebox/images/page-prev.png
+       /var/www/enterprisestoragebox/images/page-prev.svg
+Copyright: WebHostingHub <http://www.webhostinghub.com>
+License: CC-BY-3.0
+
+Files: /var/www/enterprisestoragebox/images/page-refresh.png
+       /var/www/enterprisestoragebox/images/page-refresh.svg
+Copyright: WebHostingHub <http://www.webhostinghub.com>
+License: CC-BY-3.0
+
+Files: /var/www/enterprisestoragebox/images/loading.gif
+       /var/www/enterprisestoragebox/images/wait.gif
+Copyright: <http://www.ajaxload.info>
+License: WTFPL
+
+Files: /var/www/enterprisestoragebox/images/rj45_yes.png
+       /var/www/enterprisestoragebox/images/rj45_yes.svg
+Copyright: Volker Theile
+License: permissive
+ .Free for commercial use
+Comment: www.enterprisestoragebox.org
+
+Files: /var/www/enterprisestoragebox/images/rj45_no.png
+       /var/www/enterprisestoragebox/images/rj45_no.svg
+Copyright: Volker Theile
+License: permissive
+ .Free for commercial use
+Comment: www.enterprisestoragebox.org
+
+Files: /var/www/enterprisestoragebox/images/tree-folder.png
+       /var/www/enterprisestoragebox/images/tree-folder.svg
+Copyright: Google <https://www.google.com/design/icons>
+License: CC-BY-4.0
+
+Files: /var/www/enterprisestoragebox/images/tree-folder-open.png
+       /var/www/enterprisestoragebox/images/tree-folder-open.svg
+Copyright: Google <https://www.google.com/design/icons>
+License: CC-BY-4.0
+
+Files: /var/www/enterprisestoragebox/images/exclamation.png
+       /var/www/enterprisestoragebox/images/exclamation.svg
+Copyright: WebHostingHub <http://www.webhostinghub.com>
+License: CC-BY-3.0
