@@ -1,0 +1,74 @@
+#!/bin/sh
+#
+# This file is part of EnterpriSestorageBox.
+#
+# @license   http://www.gnu.org/licenses/gpl.html GPL Version 3
+# @author   Artur Osinski-Stachowicz <artio0610@gmail.com>
+# @copyright Copyright (c) 2009-2015 Artur Osinski-Stachowicz
+#
+# EnterpriSestorageBox is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# any later version.
+#
+# EnterpriSestorageBox is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with EnterpriSestorageBox. If not, see <http://www.gnu.org/licenses/>.
+
+# https://www.kernel.org/doc/Documentation/sysctl/vm.txt
+# https://www.kernel.org/doc/Documentation/laptops/laptop-mode.txt
+# http://lonesysadmin.net/2013/12/22/better-linux-disk-caching-performance-vm-dirty_ratio
+# https://major.io/2008/08/07/reduce-disk-io-for-small-reads-using-memory
+
+set -e
+
+. /etc/default/enterprisestoragebox
+. /usr/share/enterprisestoragebox/scripts/helper-functions
+
+ESB_SYSCTL_NONROT_CONFIG=${ESB_SYSCTL_NONROT_CONFIG:-"/etc/sysctl.d/99-enterprisestoragebox-nonrot.conf"}
+ESB_SYSCTL_VM_DIRTYBACKGROUNDRATIO=${ESB_SYSCTL_VM_DIRTYBACKGROUNDRATIO:-"1"}
+ESB_SYSCTL_VM_DIRTYRATIO=${ESB_SYSCTL_VM_DIRTYRATIO:-"20"}
+ESB_SYSCTL_VM_DIRTYWRITEBACKCENTISECS=${ESB_SYSCTL_VM_DIRTYWRITEBACKCENTISECS:-"12000"}
+ESB_SYSCTL_VM_DIRTYEXPIRECENTISECS=${ESB_SYSCTL_VM_DIRTYEXPIRECENTISECS:-"12000"}
+ESB_SYSCTL_VM_LAPTOPMODE=${ESB_SYSCTL_VM_LAPTOPMODE:-"5"}
+ESB_SYSCTL_VM_SWAPPINESS=${ESB_SYSCTL_VM_SWAPPINESS:-"1"}
+ESB_SYSCTL_VM_VFSCACHEPRESSURE=${ESB_SYSCTL_VM_VFSCACHEPRESSURE:-"50"}
+
+# Cleanup config file.
+rm -f ${ESB_SYSCTL_NONROT_CONFIG}
+
+# Modify some kernel parameters to reduce disk I/O for non-rotating devices.
+# The improvements are only done if the root device is a non-rotating
+# device, e.g. SSD or DOM.
+devicefile=$(esb_get_root_devicefile)
+devicefile=$(readlink -f ${devicefile})
+devicename=$(basename ${devicefile} | sed 's/[1-9]//g')
+filepath="/sys/block/${devicename}/queue/rotational"
+if [ -f "${filepath}" ]; then
+	if [ $(cat "${filepath}") -eq 0 ]; then
+cat <<EOF > ${ESB_SYSCTL_NONROT_CONFIG}
+# This configuration file is auto-generated.
+# Modify some kernel parameters to reduce disk I/O for non-rotating devices.
+#
+# Default values:
+# vm.dirty_background_ratio = 10
+# vm.dirty_ratio = 20
+# vm.dirty_writeback_centisecs = 500
+# vm.dirty_expire_centisecs = 3000
+# vm.laptop_mode = 0
+# vm.swappiness = 60
+# vm.vfs_cache_pressure = 100
+vm.dirty_background_ratio = ${ESB_SYSCTL_VM_DIRTYBACKGROUNDRATIO}
+vm.dirty_ratio = ${ESB_SYSCTL_VM_DIRTYRATIO}
+vm.dirty_writeback_centisecs = ${ESB_SYSCTL_VM_DIRTYWRITEBACKCENTISECS}
+vm.dirty_expire_centisecs = ${ESB_SYSCTL_VM_DIRTYEXPIRECENTISECS}
+vm.laptop_mode = ${ESB_SYSCTL_VM_LAPTOPMODE}
+vm.swappiness = ${ESB_SYSCTL_VM_SWAPPINESS}
+vm.vfs_cache_pressure = ${ESB_SYSCTL_VM_VFSCACHEPRESSURE}
+EOF
+	fi
+fi
