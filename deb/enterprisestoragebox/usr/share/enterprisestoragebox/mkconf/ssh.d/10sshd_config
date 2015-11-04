@@ -1,0 +1,113 @@
+#!/bin/sh
+#
+# This file is part of EnterpriSestorageBox.
+#
+# @license   http://www.gnu.org/licenses/gpl.html GPL Version 3
+# @author   Artur Osinski-Stachowicz <artio0610@gmail.com>
+# @copyright Copyright (c) 2009-2015 Artur Osinski-Stachowicz
+#
+# EnterpriSestorageBox is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# any later version.
+#
+# EnterpriSestorageBox is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with EnterpriSestorageBox. If not, see <http://www.gnu.org/licenses/>.
+
+# Documentation/Howto:
+# http://linuxwiki.de/OpenSSH
+# https://help.ubuntu.com/community/SSH/OpenSSH/Configuring
+
+set -e
+
+. /etc/default/enterprisestoragebox
+. /usr/share/enterprisestoragebox/scripts/helper-functions
+
+ESB_SSHD_CONFIG=${ESB_SSHD_CONFIG:-"/etc/ssh/sshd_config"}
+ESB_SSHD_PROTOCOL=${ESB_SSHD_PROTOCOL:-"2"}
+ESB_SSHD_ALLOWGROUPS=${ESB_SSHD_ALLOWGROUPS:-"root ssh"}
+ESB_SSHD_SUBSYSTEM_SFTP=${ESB_SSHD_SUBSYSTEM_SFTP:-"/usr/lib/openssh/sftp-server"}
+ESB_SSHD_ADDRESSFAMILY=${ESB_SSHD_ADDRESSFAMILY:-"any"}
+ESB_SSHD_X11FORWARDING=${ESB_SSHD_X11FORWARDING:-"yes"}
+ESB_SSHD_X11DISPLAYOFFSET=${ESB_SSHD_X11DISPLAYOFFSET:-"10"}
+ESB_SSHD_USEPRIVILEGESEPARATION=${ESB_SSHD_USEPRIVILEGESEPARATION:-"yes"}
+ESB_SSHD_KEYREGENERATIONINTERVAL=${ESB_SSHD_KEYREGENERATIONINTERVAL:-"3600"}
+ESB_SSHD_SERVERKEYBITS=${ESB_SSHD_SERVERKEYBITS:-"768"}
+ESB_SSHD_SYSLOGFACILITY=${ESB_SSHD_SYSLOGFACILITY:-"AUTH"}
+ESB_SSHD_LOGLEVEL=${ESB_SSHD_LOGLEVEL:-"INFO"}
+ESB_SSHD_LOGINGRACETIME=${ESB_SSHD_LOGINGRACETIME:-"120"}
+ESB_SSHD_STRICTMODES=${ESB_SSHD_STRICTMODES:-"yes"}
+ESB_SSHD_RSAAUTHENTICATION=${ESB_SSHD_RSAAUTHENTICATION:-"yes"}
+ESB_SSHD_PUBKEYAUTHENTICATION=${ESB_SSHD_PUBKEYAUTHENTICATION:-"yes"}
+ESB_SSHD_IGNORERHOSTS=${ESB_SSHD_IGNORERHOSTS:-"yes"}
+ESB_SSHD_RHOSTSRSAAUTHENTICATION=${ESB_SSHD_RHOSTSRSAAUTHENTICATION:-"no"}
+ESB_SSHD_HOSTBASEDAUTHENTICATION=${ESB_SSHD_HOSTBASEDAUTHENTICATION:-"no"}
+ESB_SSHD_PERMITEMPTYPASSWORDS=${ESB_SSHD_PERMITEMPTYPASSWORDS:-"no"}
+ESB_SSHD_CHALLENGERESPONSEAUTHENTICATION=${ESB_SSHD_CHALLENGERESPONSEAUTHENTICATION:-"no"}
+ESB_SSHD_PRINTMOTD=${ESB_SSHD_PRINTMOTD:-"no"}
+ESB_SSHD_PRINTLASTLOG=${ESB_SSHD_PRINTLASTLOG:-"yes"}
+ESB_SSHD_TCPKEEPALIVE=${ESB_SSHD_TCPKEEPALIVE:-"yes"}
+ESB_SSHD_ACCEPTENV=${ESB_SSHD_ACCEPTENV:-"LANG LC_*"}
+ESB_SSHD_USEPAM=${ESB_SSHD_USEPAM:-"yes"}
+ESB_SSHD_AUTHORIZEDKEYSFILE_DIR=${ESB_SSHD_AUTHORIZEDKEYSFILE_DIR:-"/var/lib/enterprisestoragebox/ssh/authorized_keys"}
+ESB_SSHD_AUTHORIZEDKEYSFILE=${ESB_SSHD_AUTHORIZEDKEYSFILE:-".ssh/authorized_keys .ssh/authorized_keys2 ${ESB_SSHD_AUTHORIZEDKEYSFILE_DIR}/%u"}
+
+# Limit connections to IPv4 only if IPv6 is disabled.
+if [ ! -f /proc/net/if_inet6 ]; then
+	ESB_SSHD_ADDRESSFAMILY="inet"
+fi
+
+# Create sshd_config file.
+# /etc/ssh/sshd_config from the Debian ssh package has been used
+# as template.
+xmlstarlet sel -t \
+  -o "Protocol ${ESB_SSHD_PROTOCOL}" -n \
+  -o "HostKey /etc/ssh/ssh_host_rsa_key" -n \
+  -o "HostKey /etc/ssh/ssh_host_dsa_key" -n \
+  -o "UsePrivilegeSeparation ${ESB_SSHD_USEPRIVILEGESEPARATION}" -n \
+  -o "KeyRegenerationInterval ${ESB_SSHD_KEYREGENERATIONINTERVAL}" -n \
+  -o "ServerKeyBits ${ESB_SSHD_SERVERKEYBITS}" -n \
+  -o "SyslogFacility ${ESB_SSHD_SYSLOGFACILITY}" -n \
+  -o "LogLevel ${ESB_SSHD_LOGLEVEL}" -n \
+  -o "LoginGraceTime ${ESB_SSHD_LOGINGRACETIME}" -n \
+  -o "StrictModes ${ESB_SSHD_STRICTMODES}" -n \
+  -o "RSAAuthentication ${ESB_SSHD_RSAAUTHENTICATION}" -n \
+  -o "PubkeyAuthentication ${ESB_SSHD_PUBKEYAUTHENTICATION}" -n \
+  -o "IgnoreRhosts ${ESB_SSHD_IGNORERHOSTS}" -n \
+  -o "RhostsRSAAuthentication ${ESB_SSHD_RHOSTSRSAAUTHENTICATION}" -n \
+  -o "HostbasedAuthentication ${ESB_SSHD_HOSTBASEDAUTHENTICATION}" -n \
+  -o "PermitEmptyPasswords ${ESB_SSHD_PERMITEMPTYPASSWORDS}" -n \
+  -o "ChallengeResponseAuthentication ${ESB_SSHD_CHALLENGERESPONSEAUTHENTICATION}" -n \
+  -o "X11Forwarding ${ESB_SSHD_X11FORWARDING}" -n \
+  -o "X11DisplayOffset ${ESB_SSHD_X11DISPLAYOFFSET}" -n \
+  -o "PrintMotd ${ESB_SSHD_PRINTMOTD}" -n \
+  -o "PrintLastLog ${ESB_SSHD_PRINTLASTLOG}" -n \
+  -o "TCPKeepAlive ${ESB_SSHD_TCPKEEPALIVE}" -n \
+  -o "AcceptEnv ${ESB_SSHD_ACCEPTENV}" -n \
+  -o "Subsystem sftp ${ESB_SSHD_SUBSYSTEM_SFTP}" -n \
+  -o "UsePAM ${ESB_SSHD_USEPAM}" -n \
+  -o "AllowGroups ${ESB_SSHD_ALLOWGROUPS}" -n \
+  -o "AddressFamily ${ESB_SSHD_ADDRESSFAMILY}" -n \
+  -m "//services/ssh" \
+	  -v "concat('Port ',port)" -n \
+	  -i "permitrootlogin = 0" -o "PermitRootLogin no" -n -b \
+	  -i "permitrootlogin = 1" -o "PermitRootLogin yes" -n -b \
+	  -i "tcpforwarding = 0" -o "AllowTcpForwarding no" -n -b \
+	  -i "tcpforwarding = 1" -o "AllowTcpForwarding yes" -n -b \
+	  -i "compression = 0" -o "Compression no" -n -b \
+	  -i "compression = 1" -o "Compression yes" -n -b \
+	  -i "passwordauthentication = 0" -o "PasswordAuthentication no" -n -b \
+	  -i "passwordauthentication = 1" -o "PasswordAuthentication yes" -n -b \
+	  -i "pubkeyauthentication = 0" -o "PubkeyAuthentication no" -n -b \
+	  -i "pubkeyauthentication = 1" \
+	    -o "AuthorizedKeysFile ${ESB_SSHD_AUTHORIZEDKEYSFILE}" -n \
+	    -o "PubkeyAuthentication yes" -n \
+	  -b \
+	  -i "string-length(extraoptions) > 0" -v "extraoptions" -n -b \
+  -b \
+  ${ESB_CONFIG_FILE} | xmlstarlet unesc > ${ESB_SSHD_CONFIG}

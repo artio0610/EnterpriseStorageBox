@@ -1,0 +1,51 @@
+#!/bin/sh
+#
+# This file is part of EnterpriSestorageBox.
+#
+# @license   http://www.gnu.org/licenses/gpl.html GPL Version 3
+# @author   Artur Osinski-Stachowicz <artio0610@gmail.com>
+# @copyright Copyright (c) 2009-2015 Artur Osinski-Stachowicz
+#
+# EnterpriSestorageBox is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# any later version.
+#
+# EnterpriSestorageBox is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with EnterpriSestorageBox. If not, see <http://www.gnu.org/licenses/>.
+
+# Documentation/Howto:
+# http://us5.samba.org/samba/docs/man/manpages-3/smb.conf.5.html
+
+set -e
+
+. /etc/default/enterprisestoragebox
+. /usr/share/enterprisestoragebox/scripts/helper-functions
+
+ESB_SAMBA_CONFIG=${ESB_SAMBA_CONFIG:-"/etc/samba/smb.conf"}
+ESB_SAMBA_HOMES_COMMENT=${ESB_SAMBA_HOMES_COMMENT:-"Home directories"}
+ESB_SAMBA_HOMES_WRITABLE=${ESB_SAMBA_HOMES_WRITABLE:-"yes"}
+ESB_SAMBA_HOMES_CREATEMASK=${ESB_SAMBA_HOMES_CREATEMASK:-"0640"}
+ESB_SAMBA_HOMES_DIRECTORYMASK=${ESB_SAMBA_HOMES_DIRECTORYMASK:-"0750"}
+ESB_SAMBA_HOMES_VALIDUSERS=${ESB_SAMBA_HOMES_VALIDUSERS:-"%S"}
+
+[ "$(esb_config_get "//services/smb/enable")" = "0" ] && exit 0
+
+xmlstarlet sel -t -m "//services/smb" \
+  -i "homesenable[. = '1']" \
+	  -o "#======================= Home Directories =======================" -n \
+	  -o "[homes]" -n \
+	  -o "comment = ${ESB_SAMBA_HOMES_COMMENT}" -n \
+	  -i "homesbrowseable[. = '0']" -o "browseable = no" -n -b \
+	  -i "homesbrowseable[. = '1']" -o "browseable = yes" -n -b \
+	  -o "writable = ${ESB_SAMBA_HOMES_WRITABLE}" -n \
+	  -o "create mask = ${ESB_SAMBA_HOMES_CREATEMASK}" -n \
+	  -o "directory mask = ${ESB_SAMBA_HOMES_DIRECTORYMASK}" -n \
+	  -o "valid users = ${ESB_SAMBA_HOMES_VALIDUSERS}" -n \
+  -b \
+  ${ESB_CONFIG_FILE} | xmlstarlet unesc >> ${ESB_SAMBA_CONFIG}

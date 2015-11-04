@@ -1,0 +1,100 @@
+#!/bin/sh
+#
+# This file is part of EnterpriSestorageBox.
+#
+# @license   http://www.gnu.org/licenses/gpl.html GPL Version 3
+# @author   Artur Osinski-Stachowicz <artio0610@gmail.com>
+# @copyright Copyright (c) 2009-2015 Artur Osinski-Stachowicz
+#
+# EnterpriSestorageBox is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# any later version.
+#
+# EnterpriSestorageBox is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with EnterpriSestorageBox. If not, see <http://www.gnu.org/licenses/>.
+
+set -e
+
+. /etc/default/enterprisestoragebox
+. /usr/share/enterprisestoragebox/scripts/helper-functions
+
+ESB_SAMBA_CONFIG=${ESB_SAMBA_CONFIG:-"/etc/samba/smb.conf"}
+ESB_SAMBA_DNSPROXY=${ESB_SAMBA_DNSPROXY:-"no"}
+ESB_SAMBA_LOGFILE=${ESB_SAMBA_LOGFILE:-"/var/log/samba/log.%m"}
+ESB_SAMBA_MAXLOGSIZE=${ESB_SAMBA_MAXLOGSIZE:-"1000"}
+ESB_SAMBA_SYSLOGONLY=${ESB_SAMBA_SYSLOGONLY:-"yes"}
+ESB_SAMBA_PANICACTION=${ESB_SAMBA_PANICACTION:-"/usr/share/samba/panic-action %d"}
+ESB_SAMBA_ENCRYPTPASSWORDS=${ESB_SAMBA_ENCRYPTPASSWORDS:-"true"}
+ESB_SAMBA_PASSDBBACKEND=${ESB_SAMBA_PASSDBBACKEND:-"tdbsam"}
+ESB_SAMBA_OBEYPAMRESTRICTIONS=${ESB_SAMBA_OBEYPAMRESTRICTIONS:-"yes"}
+ESB_SAMBA_UNIXPASSWORDSYNC=${ESB_SAMBA_UNIXPASSWORDSYNC:-"no"}
+ESB_SAMBA_PASSWDPROGRAM=${ESB_SAMBA_PASSWDPROGRAM:-"/usr/bin/passwd %u"}
+ESB_SAMBA_PASSWDCHAT=${ESB_SAMBA_PASSWDCHAT:-"*Enter\snew\s*\spassword:* %n\n *Retype\snew\s*\spassword:* %n\n *password\supdated\ssuccessfully* ."}
+ESB_SAMBA_PAMPASSWORDCHANGE=${ESB_SAMBA_PAMPASSWORDCHANGE:-"yes"}
+ESB_SAMBA_SOCKETOPTIONS=${ESB_SAMBA_SOCKETOPTIONS:-"TCP_NODELAY IPTOS_LOWDELAY"}
+ESB_SAMBA_MAPTOGUEST=${ESB_SAMBA_MAPTOGUEST:-"Bad User"}
+ESB_SAMBA_GUESTACCOUNT=${ESB_SAMBA_GUESTACCOUNT:-"nobody"}
+ESB_SAMBA_LOADPRINTERS=${ESB_SAMBA_LOADPRINTERS:-"no"}
+ESB_SAMBA_DISABLESPOOLSS=${ESB_SAMBA_DISABLESPOOLSS:-"yes"}
+ESB_SAMBA_PRINTING=${ESB_SAMBA_PRINTING:-"bsd"}
+ESB_SAMBA_PRINTCAPNAME=${ESB_SAMBA_PRINTCAPNAME:-"/dev/null"}
+ESB_SAMBA_UNIXEXTENSIONS=${ESB_SAMBA_UNIXEXTENSIONS:-"yes"}
+ESB_SAMBA_WIDELINKS=${ESB_SAMBA_WIDELINKS:-"no"}
+ESB_SAMBA_CREATEMASK=${ESB_SAMBA_CREATEMASK:-"0777"}
+ESB_SAMBA_DIRECTORYMASK=${ESB_SAMBA_DIRECTORYMASK:-"0777"}
+ESB_SAMBA_AIOREADSIZE=${ESB_SAMBA_AIOREADSIZE:-"16384"}
+ESB_SAMBA_AIOWRITESIZE=${ESB_SAMBA_AIOWRITESIZE:-"16384"}
+
+xmlstarlet sel -t -m "//services/smb" \
+  -o "#======================= Global Settings =======================" -n \
+  -o "[global]" -n \
+  -v "concat('workgroup = ',workgroup)" -n \
+  -v "concat('server string = ',serverstring)" -n \
+  -o "dns proxy = ${ESB_SAMBA_DNSPROXY}" -n \
+  -v "concat('log level = ',loglevel)" -n \
+  -v "concat('syslog = ',loglevel)" -n \
+  -o "log file = ${ESB_SAMBA_LOGFILE}" -n \
+  -o "max log size = ${ESB_SAMBA_MAXLOGSIZE}" -n \
+  -o "syslog only = ${ESB_SAMBA_SYSLOGONLY}" -n \
+  -o "panic action = ${ESB_SAMBA_PANICACTION}" -n \
+  -o "encrypt passwords = ${ESB_SAMBA_ENCRYPTPASSWORDS}" -n \
+  -o "passdb backend = ${ESB_SAMBA_PASSDBBACKEND}" -n \
+  -o "obey pam restrictions = ${ESB_SAMBA_OBEYPAMRESTRICTIONS}" -n \
+  -o "unix password sync = ${ESB_SAMBA_UNIXPASSWORDSYNC}" -n \
+  -o "passwd program = ${ESB_SAMBA_PASSWDPROGRAM}" -n \
+  -o "passwd chat = ${ESB_SAMBA_PASSWDCHAT}" -n \
+  -o "pam password change = ${ESB_SAMBA_PAMPASSWORDCHANGE}" -n \
+  -o "socket options = ${ESB_SAMBA_SOCKETOPTIONS}" -n \
+  -o "guest account = ${ESB_SAMBA_GUESTACCOUNT}" -n \
+  -o "load printers = ${ESB_SAMBA_LOADPRINTERS}" -n \
+  -o "disable spoolss = ${ESB_SAMBA_DISABLESPOOLSS}" -n \
+  -o "printing = ${ESB_SAMBA_PRINTING}" -n \
+  -o "printcap name = ${ESB_SAMBA_PRINTCAPNAME}" -n \
+  -o "unix extensions = ${ESB_SAMBA_UNIXEXTENSIONS}" -n \
+  -o "wide links = ${ESB_SAMBA_WIDELINKS}" -n \
+  -o "create mask = ${ESB_SAMBA_CREATEMASK}" -n \
+  -o "directory mask = ${ESB_SAMBA_DIRECTORYMASK}" -n \
+  -i "count(shares/*[guest != 'no']) > 0" -o "map to guest = ${ESB_SAMBA_MAPTOGUEST}" -n -b \
+  -i "usesendfile[. = '1']" -o "use sendfile = yes" -n -b \
+  -i "usesendfile[. = '0']" -o "use sendfile = no" -n -b \
+  -i "aio[. = '1']" \
+    -o "aio read size = ${ESB_SAMBA_AIOREADSIZE}" -n \
+    -o "aio write size = ${ESB_SAMBA_AIOWRITESIZE}" -n \
+  -b \
+  -i "nullpasswords[. = '1']" -o "null passwords = yes" -n -b \
+  -i "nullpasswords[. = '0']" -o "null passwords = no" -n -b \
+  -i "localmaster[. = '1']" -o "local master = yes" -n -b \
+  -i "localmaster[. = '0']" -o "local master = no" -n -b \
+  -i "timeserver[. = '1']" -o "time server = yes" -n -b \
+  -i "timeserver[. = '0']" -o "time server = no" -n -b \
+  -i "winssupport[. = '1']" -o "wins support = yes" -n -b \
+  -i "winssupport[. = '0']" -o "wins support = no" -n -b \
+  -i "string-length(winsserver) > 0" -v "concat('wins server = ',winsserver)" -n -b \
+  -i "string-length(extraoptions) > 0" -v extraoptions -n -b \
+  ${ESB_CONFIG_FILE} | xmlstarlet unesc >> ${ESB_SAMBA_CONFIG}

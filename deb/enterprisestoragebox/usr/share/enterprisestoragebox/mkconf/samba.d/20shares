@@ -1,0 +1,203 @@
+#!/bin/sh
+#
+# This file is part of EnterpriSestorageBox.
+#
+# @license   http://www.gnu.org/licenses/gpl.html GPL Version 3
+# @author   Artur Osinski-Stachowicz <artio0610@gmail.com>
+# @copyright Copyright (c) 2009-2015 Artur Osinski-Stachowicz
+#
+# EnterpriSestorageBox is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# any later version.
+#
+# EnterpriSestorageBox is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with EnterpriSestorageBox. If not, see <http://www.gnu.org/licenses/>.
+
+# Documentation/Howto:
+# http://www.samba.org/samba/docs/man/Samba-HOWTO-Collection/AccessControls.html#id2611892
+# http://us5.samba.org/samba/docs/man/manpages-3/smb.conf.5.html
+# http://www.cyberciti.biz/tips/how-do-i-set-permissions-to-samba-shares.html
+# http://oreilly.com/catalog/samba/chapter/book/ch06_02.html
+# https://www.bsi.bund.de/ContentBSI/grundschutz/kataloge/m/m04/m04332.html
+# http://www.redhat.com/advice/tips/sambatrash.html
+# http://askubuntu.com/questions/258284/setting-up-an-anonymous-public-samba-share-to-be-accessed-via-windows-7-and-xbmc
+
+set -e
+
+. /etc/default/enterprisestoragebox
+. /usr/share/enterprisestoragebox/scripts/helper-functions
+
+ESB_SAMBA_CONFIG=${ESB_SAMBA_CONFIG:-"/etc/samba/smb.conf"}
+ESB_SAMBA_SHARE_RECYCLE_REPOSITORY=${ESB_SAMBA_SHARE_RECYCLE_REPOSITORY:-".recycle"}
+ESB_SAMBA_SHARE_RECYCLE_DIRECTORYMODE=${ESB_SAMBA_SHARE_RECYCLE_DIRECTORYMODE:-"0777"}
+ESB_SAMBA_SHARE_RECYCLE_SUBDIRMODE=${ESB_SAMBA_SHARE_RECYCLE_SUBDIRMODE:-"0700"}
+ESB_SAMBA_SHARE_RECYCLE_KEEPTREE=${ESB_SAMBA_SHARE_RECYCLE_KEEPTREE:-"yes"}
+ESB_SAMBA_SHARE_RECYCLE_VERSIONS=${ESB_SAMBA_SHARE_RECYCLE_VERSIONS:-"yes"}
+ESB_SAMBA_SHARE_RECYCLE_TOUCH=${ESB_SAMBA_SHARE_RECYCLE_TOUCH:-"yes"}
+ESB_SAMBA_SHARE_RECYCLE_EXCLUDE=${ESB_SAMBA_SHARE_RECYCLE_EXCLUDE:-""}
+ESB_SAMBA_SHARE_RECYCLE_EXCLUDEDIR=${ESB_SAMBA_SHARE_RECYCLE_EXCLUDEDIR:-""}
+ESB_SAMBA_SHARE_PRINTABLE=${ESB_SAMBA_SHARE_PRINTABLE:-"no"}
+ESB_SAMBA_SHARE_CREATEMASK=${ESB_SAMBA_SHARE_CREATEMASK:-"0755"}
+ESB_SAMBA_SHARE_FORCECREATEMODE=${ESB_SAMBA_SHARE_FORCECREATEMODE:-"0644"}
+ESB_SAMBA_SHARE_DIRECTORYMASK=${ESB_SAMBA_SHARE_DIRECTORYMASK:-"0755"}
+ESB_SAMBA_SHARE_FORCEDIRECTORYMODE=${ESB_SAMBA_SHARE_FORCEDIRECTORYMODE:-"0755"}
+ESB_SAMBA_SHARE_AUDIT_PREFIX=${ESB_SAMBA_SHARE_AUDIT_PREFIX:-"%u|%I|%m|%P|%S"}
+ESB_SAMBA_SHARE_AUDIT_SUCCESS=${ESB_SAMBA_SHARE_AUDIT_SUCCESS:-"mkdir rename unlink rmdir pwrite"}
+ESB_SAMBA_SHARE_AUDIT_FAILURE=${ESB_SAMBA_SHARE_AUDIT_FAILURE:-"none"}
+ESB_SAMBA_SHARE_AUDIT_FACILITY=${ESB_SAMBA_SHARE_AUDIT_FACILITY:-"local7"}
+ESB_SAMBA_SHARE_AUDIT_PRIORITY=${ESB_SAMBA_SHARE_AUDIT_PRIORITY:-"NOTICE"}
+
+[ "$(esb_config_get "//services/smb/enable")" = "0" ] && exit 0
+
+echo "#======================= Share Definitions =======================" >> ${ESB_SAMBA_CONFIG}
+index=$(esb_config_get_count "//services/smb/shares/share")
+while [ ${index} -gt 0 ]; do
+	# Get the UUID of the current share.
+	uuid=$(esb_config_get "//services/smb/shares/share[position()=${index}]/uuid")
+	# Process enabled shares.
+	enabled=$(esb_config_get "//services/smb/shares/share[uuid='${uuid}']/enable")
+	if [ "${enabled}" = "1" ]; then
+		# Get the shared folder reference and path
+		sfref=$(esb_config_get "//services/smb/shares/share[uuid='${uuid}']/sharedfolderref")
+		sfpath=$(esb_get_sharedfolder_path "${sfref}")
+
+		xmlstarlet sel -t -m "//services/smb/shares/share[uuid='${uuid}']" \
+		  -v "concat('[',name,']')" -n \
+		  -i "string-length(comment) > 0" -v "concat('comment = ',comment)" -n -b \
+		  -o "path = ${sfpath}" -n \
+		  -i "guest[. = 'no']" -o "guest ok = no" -n -b \
+		  -i "not(guest[. = 'no'])" -o "guest ok = yes" -n -b \
+		  -i "guest[. = 'only']" -o "guest only = yes" -n -b \
+		  -i "readonly[. = '0']" -o "read only = no" -n -b \
+		  -i "readonly[. = '1']" -o "read only = yes" -n -b \
+		  -i "browseable[. = '0']" -o "browseable = no" -n -b \
+		  -i "browseable[. = '1']" -o "browseable = yes" -n -b \
+		  -i "inheritacls[. = '0']" -o "inherit acls = no" -n -b \
+		  -i "inheritacls[. = '1']" -o "inherit acls = yes" -n -b \
+		  -i "inheritpermissions[. = '0']" -o "inherit permissions = no" -n -b \
+		  -i "inheritpermissions[. = '1']" -o "inherit permissions = yes" -n -b \
+		  -i "easupport[. = '0']" -o "ea support = no" -n -b \
+		  -i "easupport[. = '1']" -o "ea support = yes" -n -b \
+		  -i "storedosattributes[. = '0']" -o "store dos attributes = no" -n -b \
+		  -i "storedosattributes[. = '1']" -o "store dos attributes = yes" -n -b \
+		  -i "recyclebin[. = '1'] or audit[. = '1']" \
+			  -o "vfs objects =" \
+			  -i "recyclebin[. = '1']" -o " recycle" -b \
+			  -i "audit[. = '1']" -o " full_audit" -b \
+			  -n \
+		  -b \
+		  -i "recyclebin[. = '1']" \
+			  -o "recycle:repository = ${ESB_SAMBA_SHARE_RECYCLE_REPOSITORY}/%U" -n \
+			  -o "recycle:keeptree = ${ESB_SAMBA_SHARE_RECYCLE_KEEPTREE}" -n \
+			  -o "recycle:versions = ${ESB_SAMBA_SHARE_RECYCLE_VERSIONS}" -n \
+			  -o "recycle:touch = ${ESB_SAMBA_SHARE_RECYCLE_TOUCH}" -n \
+			  -o "recycle:directory_mode = ${ESB_SAMBA_SHARE_RECYCLE_DIRECTORYMODE}" -n \
+			  -o "recycle:subdir_mode = ${ESB_SAMBA_SHARE_RECYCLE_SUBDIRMODE}" -n \
+			  -o "recycle:exclude = ${ESB_SAMBA_SHARE_RECYCLE_EXCLUDE}" -n \
+			  -o "recycle:exclude_dir = ${ESB_SAMBA_SHARE_RECYCLE_EXCLUDEDIR}" -n \
+			  -v "concat('recycle:maxsize = ',recyclemaxsize)" -n \
+		  -b \
+		  -i "audit[. = '1']" \
+			  -o "full_audit:prefix = ${ESB_SAMBA_SHARE_AUDIT_PREFIX}" -n \
+			  -o "full_audit:success = ${ESB_SAMBA_SHARE_AUDIT_SUCCESS}" -n \
+			  -o "full_audit:failure = ${ESB_SAMBA_SHARE_AUDIT_FAILURE}" -n \
+			  -o "full_audit:facility = ${ESB_SAMBA_SHARE_AUDIT_FACILITY}" -n \
+			  -o "full_audit:priority = ${ESB_SAMBA_SHARE_AUDIT_PRIORITY}" -n \
+		  -b \
+		  -o "printable = ${ESB_SAMBA_SHARE_PRINTABLE}" -n \
+		  -o "create mask = ${ESB_SAMBA_SHARE_CREATEMASK}" -n \
+		  -o "force create mode = ${ESB_SAMBA_SHARE_FORCECREATEMODE}" -n \
+		  -o "directory mask = ${ESB_SAMBA_SHARE_DIRECTORYMASK}" -n \
+		  -o "force directory mode = ${ESB_SAMBA_SHARE_FORCEDIRECTORYMODE}" -n \
+		  -i "string-length(hostsallow) > 0" -v "concat('hosts allow = ',hostsallow)" -n -b \
+		  -i "string-length(hostsdeny) > 0" -v "concat('hosts deny = ',hostsdeny)" -n -b \
+		  -i "hidedotfiles[. = '0']" -o "hide dot files = no" -b \
+		  -i "hidedotfiles[. = '1']" -o "hide dot files = yes" -b \
+		  ${ESB_CONFIG_FILE} | xmlstarlet unesc >> ${ESB_SAMBA_CONFIG}
+
+		# Process the share privileges. Users with '0 = no permission' are added
+		# to 'invalid users' (to deny access), users with '5 = read and execute'
+		# are added to the 'read list'.
+		validusers=""
+		invalidusers=""
+		readlist=""
+		writelist=""
+
+		# Get shared folder user privileges
+		privileges=$(xmlstarlet sel -t -m "//system/shares/sharedfolder[uuid='${sfref}']/privileges/privilege[type='user']" \
+		  -v "concat(perms,':',name)" -n \
+		  ${ESB_CONFIG_FILE} | xmlstarlet unesc)
+		IFS="$(printf '\n+')"
+		for privilege in ${privileges}; do
+			[ -z "${privilege}" ] && continue
+			perms=${privilege%:*}
+			name=${privilege#*:}
+			# Append user to list
+			case ${perms} in
+			0)	[ -n "${invalidusers}" ] && invalidusers="${invalidusers},";
+				invalidusers="${invalidusers}\"${name}\"";;
+			5)
+				[ -n "${readlist}" ] && readlist="${readlist},";
+				readlist="${readlist}\"${name}\"";
+				[ -n "${validusers}" ] && validusers="${validusers},";
+				validusers="${validusers}\"${name}\"";;
+			7)
+				[ -n "${writelist}" ] && writelist="${writelist},";
+				writelist="${writelist}\"${name}\"";
+				[ -n "${validusers}" ] && validusers="${validusers},";
+				validusers="${validusers}\"${name}\"";;
+			esac
+		done
+		unset IFS
+
+		# Get shared folder group privileges
+		privileges=$(xmlstarlet sel -t -m "//system/shares/sharedfolder[uuid='${sfref}']/privileges/privilege[type='group']" \
+		  -v "concat(perms,':',name)" -n \
+		  ${ESB_CONFIG_FILE} | xmlstarlet unesc)
+		IFS="$(printf '\n+')"
+		for privilege in ${privileges}; do
+			[ -z "${privilege}" ] && continue
+			perms=${privilege%:*}
+			name=${privilege#*:}
+			# Append group to list
+			case ${perms} in
+			0)	[ -n "${invalidusers}" ] && invalidusers="${invalidusers},";
+				invalidusers="${invalidusers}@\"${name}\"";;
+			5)
+				[ -n "${readlist}" ] && readlist="${readlist},";
+				readlist="${readlist}@\"${name}\"";
+				[ -n "${validusers}" ] && validusers="${validusers},";
+				validusers="${validusers}@\"${name}\"";;
+			7)
+				[ -n "${writelist}" ] && writelist="${writelist},";
+				writelist="${writelist}@\"${name}\"";
+				[ -n "${validusers}" ] && validusers="${validusers},";
+				validusers="${validusers}@\"${name}\"";;
+			esac
+		done
+		unset IFS
+
+		xmlstarlet sel -t -m "//services/smb/shares/share[uuid='${uuid}']" \
+		  -i "not(guest[. = 'only'])" \
+		    -i "guest[. = 'no']" \
+		      -o "valid users = ${validusers}" -n \
+		      -o "invalid users = ${invalidusers}" -n \
+			-b \
+		    -o "read list = ${readlist}" -n \
+		    -i "readonly[. = '0']" -o "write list = ${writelist}" -n -b \
+		  -b \
+		  ${ESB_CONFIG_FILE} | xmlstarlet unesc >> ${ESB_SAMBA_CONFIG}
+
+		# Add extra options.
+		xmlstarlet sel -t -m "//services/smb/shares/share[uuid='${uuid}']" \
+		  -i "string-length(extraoptions) > 0" -v extraoptions -n -b \
+		  ${ESB_CONFIG_FILE} | xmlstarlet unesc >> ${ESB_SAMBA_CONFIG}
+	fi
+	index=$(( ${index} - 1 ))
+done
