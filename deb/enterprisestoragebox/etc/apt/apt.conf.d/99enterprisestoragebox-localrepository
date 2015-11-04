@@ -1,0 +1,3 @@
+// Ensure that the local package repository files exists.
+APT::Update::Pre-Invoke { ". /etc/default/enterprisestoragebox; if [ ! -e ${ESB_DPKGARCHIVE_DIR}/Packages ]; then echo Building local package repository ...; cd ${ESB_DPKGARCHIVE_DIR} && apt-ftparchive packages . > Packages; fi"; };
+DPkg::Pre-Invoke { ". /etc/default/enterprisestoragebox; if [ ! -e ${ESB_DPKGARCHIVE_DIR}/Packages ]; then echo Building local package repository ...; cd ${ESB_DPKGARCHIVE_DIR} && apt-ftparchive packages . > Packages; fi"; };
