@@ -1,0 +1,112 @@
+#!/bin/sh
+#
+# This file is part of EnterpriseStorageBox.
+#
+# @license   http://www.gnu.org/licenses/gpl.html GPL Version 3
+# @author    Artur Osinski-Stachowicz <artio0610@gmail.com>
+# @copyright Copyright (c) 2009-2015 Artur Osinski-Stachowicz
+#
+# EnterpriseStorageBox is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# any later version.
+#
+# EnterpriseStorageBox is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with EnterpriseStorageBox. If not, see <http://www.gnu.org/licenses/>.
+
+set -e
+
+. /etc/default/enterprisestoragebox
+. /usr/share/enterprisestoragebox/scripts/helper-functions
+
+ESB_WEBGUI_JS_DIR=${ESB_WEBGUI_JS_DIR:-"${ESB_DOCUMENTROOT_DIR}/js"}
+ESB_WEBGUI_COMPACT_JS_FILE_TEMPLATE=${ESB_WEBGUI_COMPACT_JS_FILE_TEMPLATE:-"${ESB_WEBGUI_JS_DIR}/esb-all-"}
+
+usage() {
+	cat <<EOF
+Usage:
+  $(basename $0) [options]
+
+Join and compress the WebGUI Javascript files into a single file.
+
+OPTIONS:
+  -h  Show this message.
+  -v  Explain what is being done.
+
+EOF
+}
+
+failure() {
+	rm -f ${ESB_WEBGUI_COMPACT_JS_FILE_TEMPLATE}*.js
+	exit
+}
+
+# Print info message.
+printinfo() {
+	if test x${verbose} != x ; then
+		echo ${*}
+	fi
+}
+
+# Get the Javascript files to be joined and compressed.
+# @param mode The mode of the WebGUI, e.g. 'login', 'admin' or 'user'.
+findjsinc() {
+	php5 -c /etc/enterprisestoragebox <<EOF
+<?php
+require_once("enterprisestoragebox/globals.inc");
+require_once("enterprisestoragebox/htmlpage.inc");
+switch ('$1') {
+case 'admin':
+case 'user':
+	\$page = new ESBControlPanel('$1');
+	break;
+case 'login':
+	\$page = new ESBLoginPage();
+	break;
+}
+chdir(\$GLOBALS['ESB_DOCUMENTROOT_DIR']);
+\$incList = array_unique(\$page->getJavascriptIncludes());
+array_walk(\$incList, create_function('&\$val','\$val = sprintf("%s/%s",
+  \$GLOBALS["ESB_DOCUMENTROOT_DIR"], \$val);'));
+print implode(" ", \$incList);
+?>
+EOF
+}
+
+verbose=
+
+# Process command line arguments.
+while getopts 'v?h' option
+do
+	case ${option} in
+	v)
+		verbose=yes
+		;;
+	h|?)
+		usage >&2
+		exit 0
+		;;
+	esac
+done
+
+# Automatically cleanup in case of an error.
+trap failure 1 2 5 15
+
+# Join and compress all WebGUI Javascript files.
+printinfo -n "Joining and compressing Javascript files ..."
+for mode in login admin user; do
+	outfile="${ESB_WEBGUI_COMPACT_JS_FILE_TEMPLATE}${mode}.js"
+	cat /dev/null > ${outfile}
+	for infile in $(findjsinc ${mode}); do
+		printinfo -n "."
+		esb-jsminify --in=${infile} >> ${outfile} || false
+	done
+done
+printinfo ""
+
+exit 0
