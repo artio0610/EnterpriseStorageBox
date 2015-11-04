@@ -1,0 +1,55 @@
+#!/bin/sh
+#
+# This file is part of EnterpriSestorageBox.
+#
+# @license   http://www.gnu.org/licenses/gpl.html GPL Version 3
+# @author   Artur Osinski-Stachowicz <artio0610@gmail.com>
+# @copyright Copyright (c) 2009-2015 Artur Osinski-Stachowicz
+#
+# EnterpriSestorageBox is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# any later version.
+#
+# EnterpriSestorageBox is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with EnterpriSestorageBox. If not, see <http://www.gnu.org/licenses/>.
+
+set -e
+
+. /etc/default/enterprisestoragebox
+. /usr/share/enterprisestoragebox/scripts/helper-functions
+
+ESB_PROFTPD_CONFIG=${ESB_PROFTPD_CONFIG:-"/etc/proftpd/proftpd.conf"}
+ESB_PROFTPD_MODAUTH_DEFAULTROOT=${ESB_PROFTPD_MODAUTH_DEFAULTROOT:-"/srv/ftp"}
+ESB_PROFTPD_MODAUTH_USEFTPUSERS=${ESB_PROFTPD_MODAUTH_USEFTPUSERS:-"off"}
+
+xmlstarlet sel -t -m "//services/ftp" \
+	  -o "<IfModule mod_auth.c>" -n \
+      -o "  DefaultRoot ${ESB_PROFTPD_MODAUTH_DEFAULTROOT}" -n \
+      -v "concat('  MaxClients ',maxclients)" -n \
+      -i "maxloginattempts[. > '0']" -v "concat('  MaxLoginAttempts ',maxloginattempts )" -n -b \
+      -i "requirevalidshell[. = '0']" -o "  RequireValidShell off" -n -b \
+	  -i "requirevalidshell[. = '1']" -o "  RequireValidShell on" -n -b \
+      -i "rootlogin[. = '1']" -o "  RootLogin on" -n -b \
+      -o "  # This option is useless because this is handled via the PAM" -n \
+      -o "  # pam_listfile.so module, so set it to 'off' by default." -n \
+      -o "  UseFtpUsers ${ESB_PROFTPD_MODAUTH_USEFTPUSERS}" -n \
+	  -o "</ifModule>" -n \
+  -b \
+  ${ESB_CONFIG_FILE} | xmlstarlet unesc >> ${ESB_PROFTPD_CONFIG}
+
+# Modify /etc/ftpusers because root login is handled by the PAM
+# pam_listfile.so module.
+rootlogin=$(esb_config_get "//services/ftp/rootlogin")
+if esb_checkyesno "${rootlogin}"; then
+    # Allow 'root' to login.
+    sed -i -e "s/^\(root\)/#\1/i" /etc/ftpusers
+else
+    # Deny 'root' to login.
+    sed -i -e "s/^#\(root\)/\1/i" /etc/ftpusers
+fi

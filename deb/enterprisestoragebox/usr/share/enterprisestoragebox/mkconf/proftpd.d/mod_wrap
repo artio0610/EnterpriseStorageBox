@@ -1,0 +1,46 @@
+#!/bin/sh
+#
+# This file is part of EnterpriSestorageBox.
+#
+# @license   http://www.gnu.org/licenses/gpl.html GPL Version 3
+# @author   Artur Osinski-Stachowicz <artio0610@gmail.com>
+# @copyright Copyright (c) 2009-2015 Artur Osinski-Stachowicz
+#
+# EnterpriSestorageBox is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# any later version.
+#
+# EnterpriSestorageBox is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with EnterpriSestorageBox. If not, see <http://www.gnu.org/licenses/>.
+
+set -e
+
+. /etc/default/enterprisestoragebox
+. /usr/share/enterprisestoragebox/scripts/helper-functions
+
+ESB_PROFTPD_CONFIG=${ESB_PROFTPD_CONFIG:-"/etc/proftpd/proftpd.conf"}
+ESB_PROFTPD_MODWRAP_TCPACCESSFILES=${ESB_PROFTPD_MODWRAP_TCPACCESSFILES:-"/etc/hosts.allow /etc/hosts.deny"}
+ESB_PROFTPD_MODWRAP_TCPACCESSSYSLOGLEVELS=${ESB_PROFTPD_MODWRAP_TCPACCESSSYSLOGLEVELS:-"info warn"}
+ESB_PROFTPD_MODWRAP_TCPSERVICENAME=${ESB_PROFTPD_MODWRAP_TCPSERVICENAME:-"ftpd"}
+
+for hostsfile in ${ESB_PROFTPD_MODWRAP_TCPACCESSFILES}
+do
+	if [ ! -f "${hostsfile}" ]; then
+		touch "${hostsfile}"
+		chmod 644 "${hostsfile}"
+	fi
+done
+
+	cat >> ${ESB_PROFTPD_CONFIG} <<EOF
+<IfModule mod_wrap.c>
+  TCPAccessFiles ${ESB_PROFTPD_MODWRAP_TCPACCESSFILES}
+  TCPAccessSyslogLevels ${ESB_PROFTPD_MODWRAP_TCPACCESSSYSLOGLEVELS}
+  TCPServiceName ${ESB_PROFTPD_MODWRAP_TCPSERVICENAME}
+</ifModule>
+EOF
