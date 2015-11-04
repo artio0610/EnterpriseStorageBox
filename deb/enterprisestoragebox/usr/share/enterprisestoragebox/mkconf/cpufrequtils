@@ -1,0 +1,51 @@
+#!/bin/sh
+#
+# This file is part of EnterpriSestorageBox.
+#
+# @license   http://www.gnu.org/licenses/gpl.html GPL Version 3
+# @author   Artur Osinski-Stachowicz <artio0610@gmail.com>
+# @copyright Copyright (c) 2009-2015 Artur Osinski-Stachowicz
+#
+# EnterpriSestorageBox is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# any later version.
+#
+# EnterpriSestorageBox is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with EnterpriSestorageBox. If not, see <http://www.gnu.org/licenses/>.
+
+# Documentation/Howto:
+# http://technowizah.com/2007/01/debian-how-to-cpu-frequency-management.html
+# http://wiki.hetzner.de/index.php/Cool%27n%27Quiet
+# http://wiki.ubuntuusers.de/powernowd
+
+set -e
+
+. /etc/default/enterprisestoragebox
+. /usr/share/enterprisestoragebox/scripts/helper-functions
+
+ESB_CPUFREQUTILS_DEFAULT=${ESB_CPUFREQUTILS_DEFAULT:-"/etc/default/cpufrequtils"}
+ESB_CPUFREQUTILS_GOVERNOR=${ESB_CPUFREQUTILS_GOVERNOR:-"conservative"}
+ESB_CPUFREQUTILS_MAXSPEED=${ESB_CPUFREQUTILS_MAXSPEED:-"0"}
+ESB_CPUFREQUTILS_MINSPEED=${ESB_CPUFREQUTILS_MINSPEED:-"0"}
+ESB_LOADCPUFREQ_DEFAULT=${ESB_LOADCPUFREQ_DEFAULT:-"/etc/default/loadcpufreq"}
+
+# Create '/etc/default/cpufrequtils' file
+xmlstarlet sel -t -m "//system/powermanagement" \
+  -i "cpufreq = 0" -o "ENABLE=\"false\"" -n -b \
+  -i "cpufreq = 1" -o "ENABLE=\"true\"" -n -b \
+  -o "GOVERNOR=\"${ESB_CPUFREQUTILS_GOVERNOR}\"" -n \
+  -o "MAX_SPEED=\"${ESB_CPUFREQUTILS_MAXSPEED}\"" -n \
+  -o "MIN_SPEED=\"${ESB_CPUFREQUTILS_MINSPEED}\"" \
+  ${ESB_CONFIG_FILE} | xmlstarlet unesc > ${ESB_CPUFREQUTILS_DEFAULT}
+
+# Create '/etc/default/loadcpufreq' file
+xmlstarlet sel -t -m "//system/powermanagement" \
+  -i "cpufreq = 0" -o "ENABLE=\"false\"" -b \
+  -i "cpufreq = 1" -o "ENABLE=\"true\"" -b \
+  ${ESB_CONFIG_FILE} | xmlstarlet unesc > ${ESB_LOADCPUFREQ_DEFAULT}

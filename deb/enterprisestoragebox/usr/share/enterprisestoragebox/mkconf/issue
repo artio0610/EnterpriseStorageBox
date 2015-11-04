@@ -1,0 +1,86 @@
+#!/bin/sh
+#
+# This file is part of EnterpriSestorageBox.
+#
+# @license   http://www.gnu.org/licenses/gpl.html GPL Version 3
+# @author   Artur Osinski-Stachowicz <artio0610@gmail.com>
+# @copyright Copyright (c) 2009-2015 Artur Osinski-Stachowicz
+#
+# EnterpriSestorageBox is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# any later version.
+#
+# EnterpriSestorageBox is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with EnterpriSestorageBox. If not, see <http://www.gnu.org/licenses/>.
+
+set -e
+
+. /etc/default/enterprisestoragebox
+. /usr/share/enterprisestoragebox/scripts/helper-functions
+
+ESB_ISSUE_CONFIG=${ESB_ISSUE_CONFIG:-"/etc/issue"}
+ESB_ISSUE_APPLY_PRELOGIN_MESSAGE=${ESB_ISSUE_APPLY_PRELOGIN_MESSAGE:-"yes"}
+
+mkconf() {
+	# Apply prelogin message?
+	! esb_checkyesno "${ESB_ISSUE_APPLY_PRELOGIN_MESSAGE}" && exit 0;
+
+	# Get the product information.
+	prdname=$(esb_product_info "name")
+	packagename=$(esb_product_info "packagename")
+	version=$(dpkg-query -W -f='${Version}' ${packagename})
+	versionname=$(esb_product_info "versionname")
+	copyright=$(esb_product_info "copyright")
+	url=$(esb_product_info "url")
+
+	# Write prelogin message to '/etc/issue' file.
+	cat <<EOF > ${ESB_ISSUE_CONFIG}
+${prdname} ${version} (${versionname}) \n \l
+${copyright}
+
+To manage the system visit the ${prdname} web management
+interface via a web browser:
+
+EOF
+
+	ifaces=$(ifquery --list --allow=hotplug -X lo)
+	if [ -n "${ifaces}" ]; then
+		for iface in ${ifaces} ; do
+			ipaddr=$(esb_get_ipaddr ${iface})
+			if [ -n "${ipaddr}" ]; then
+				echo "${iface}: ${ipaddr}" >> ${ESB_ISSUE_CONFIG}
+			fi
+			ipaddr6=$(esb_get_ipaddr6 ${iface})
+			if [ -n "${ipaddr6}" ]; then
+				echo "${iface}: [${ipaddr6}]" >> ${ESB_ISSUE_CONFIG}
+			fi
+		done
+	else
+		echo "No interface(s) available" >> ${ESB_ISSUE_CONFIG}
+	fi
+
+	cat <<EOF >> ${ESB_ISSUE_CONFIG}
+
+The default web management interface administrator account has
+the username 'admin' and password '$(echo ${prdname} | awk '{print tolower($0)}')'.
+It is recommended that you change the password for this account
+via the web management interface or using the 'esb-firstaid'
+CLI command.
+
+For more information regarding this appliance, please visit
+the web site: ${url}
+
+EOF
+}
+
+case "$1" in
+	mkconf|*)
+		mkconf
+		;;
+esac
