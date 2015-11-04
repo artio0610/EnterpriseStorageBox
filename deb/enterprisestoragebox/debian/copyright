@@ -167,13 +167,13 @@ License: CC-BY-SA-3.0
 
 Files: /var/www/enterprisestoragebox/images/error.png
        /var/www/enterprisestoragebox/images/error.png
-Copyright: Volker Theile
+Copyright: Artur Osinski-Stachowicz
 License: CC-BY-3.0
 Comment: Based on WebHostingHub
 
 Files: /var/www/enterprisestoragebox/images/warn.png
        /var/www/enterprisestoragebox/images/warn.png
-Copyright: Volker Theile
+Copyright: Artur Osinski-Stachowicz
 License: CC-BY-3.0
 Comment: Based on alert.svg from WebHostingHub
 
@@ -203,7 +203,7 @@ License: CC-BY-3.0
 
 Files: /var/www/enterprisestoragebox/images/shutdown_64.png
        /var/www/enterprisestoragebox/images/shutdown_64.png
-Copyright: Volker Theile
+Copyright: Artur Osinski-Stachowicz
 License: CC-BY-3.0
 Comment: Based on shutdown.svg from WebHostingHub
 
@@ -229,56 +229,56 @@ License: CC-BY-3.0
 
 Files: /var/www/enterprisestoragebox/images/switch_on.png
        /var/www/enterprisestoragebox/images/switch_on.svg
-Copyright: Volker Theile
+Copyright: Artur Osinski-Stachowicz
 License: permissive
  .Free for commercial use
 Comment: www.enterprisestoragebox.org
 
 Files: /var/www/enterprisestoragebox/images/switch_off.png
        /var/www/enterprisestoragebox/images/switch_off.svg
-Copyright: Volker Theile
+Copyright: Artur Osinski-Stachowicz
 License: permissive
  .Free for commercial use
 Comment: www.enterprisestoragebox.org
 
 Files: /var/www/enterprisestoragebox/images/switch_green.png
        /var/www/enterprisestoragebox/images/switch_green.svg
-Copyright: Volker Theile
+Copyright: Artur Osinski-Stachowicz
 License: permissive
  .Free for commercial use
 Comment: www.enterprisestoragebox.org
 
 Files: /var/www/enterprisestoragebox/images/switch_red.png
        /var/www/enterprisestoragebox/images/switch_red.svg
-Copyright: Volker Theile
+Copyright: Artur Osinski-Stachowicz
 License: permissive
  .Free for commercial use
 Comment: www.enterprisestoragebox.org
 
 Files: /var/www/enterprisestoragebox/images/led_blue.png
        /var/www/enterprisestoragebox/images/led_blue.svg
-Copyright: Volker Theile
+Copyright: Artur Osinski-Stachowicz
 License: permissive
  .Free for commercial use
 Comment: www.enterprisestoragebox.org
 
 Files: /var/www/enterprisestoragebox/images/led_gray.png
        /var/www/enterprisestoragebox/images/led_gray.svg
-Copyright: Volker Theile
+Copyright: Artur Osinski-Stachowicz
 License: permissive
  Free for commercial use.
 Comment: www.enterprisestoragebox.org
 
 Files: /var/www/enterprisestoragebox/images/led_green.png
        /var/www/enterprisestoragebox/images/led_green.svg
-Copyright: Volker Theile
+Copyright: Artur Osinski-Stachowicz
 License: permissive
  Free for commercial use.
 Comment: www.enterprisestoragebox.org
 
 Files: /var/www/enterprisestoragebox/images/led_red.png
        /var/www/enterprisestoragebox/images/led_red.svg
-Copyright: Volker Theile
+Copyright: Artur Osinski-Stachowicz
 License: permissive
  .Free for commercial use
 Comment: www.enterprisestoragebox.org
@@ -301,7 +301,7 @@ License: CC-BY-3.0
 Files: /var/www/enterprisestoragebox/images/add-trigger.png
        /var/www/enterprisestoragebox/images/folder-trigger.png
        /var/www/enterprisestoragebox/images/password-trigger.png
-Copyright: Volker Theile, based on WebHostingHub and ExtJS trigger template
+Copyright: Artur Osinski-Stachowicz, based on WebHostingHub and ExtJS trigger template
 License: GPL
 
 Files: /var/www/enterprisestoragebox/images/wrench.png
@@ -320,7 +320,7 @@ Copyright: WebHostingHub <http://www.webhostinghub.com>
 License: CC-BY-3.0
 
 Files: /var/www/enterprisestoragebox/images/changelog.png
-Copyright: Volker Theile
+Copyright: Artur Osinski-Stachowicz
 License: permissive
  Free for commercial use.
 Comment: www.enterprisestoragebox.org
@@ -493,14 +493,14 @@ License: WTFPL
 
 Files: /var/www/enterprisestoragebox/images/rj45_yes.png
        /var/www/enterprisestoragebox/images/rj45_yes.svg
-Copyright: Volker Theile
+Copyright: Artur Osinski-Stachowicz
 License: permissive
  .Free for commercial use
 Comment: www.enterprisestoragebox.org
 
 Files: /var/www/enterprisestoragebox/images/rj45_no.png
        /var/www/enterprisestoragebox/images/rj45_no.svg
-Copyright: Volker Theile
+Copyright: Artur Osinski-Stachowicz
 License: permissive
  .Free for commercial use
 Comment: www.enterprisestoragebox.org

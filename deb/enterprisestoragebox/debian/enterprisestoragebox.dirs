@@ -1,4 +1,4 @@
-etc/openmediavault
+etc/enterprisestoragebox
 etc/apt/pre-invoke.d
 etc/apt/post-invoke.d
 etc/apt/update-pre-invoke.d

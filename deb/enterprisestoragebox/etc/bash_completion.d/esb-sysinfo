@@ -25,15 +25,15 @@ _esb-sysinfo()
 	cur="${COMP_WORDS[COMP_CWORD]}"
 	prev="${COMP_WORDS[COMP_CWORD-1]}"
 
-	# Directory where the OMV-sysinfo modules are stored.
-	OMV_SYSINFO_MODULES="/usr/share/enterprisestoragebox/sysinfo/modules.d"
+	# Directory where the ESB-sysinfo modules are stored.
+	ESB_SYSINFO_MODULES="/usr/share/enterprisestoragebox/sysinfo/modules.d"
 
 	# If previous word is "-c" (category) then print out only numbers.
 	case $prev in
 	-c)  
-		COMPREPLY=( $( command ls --color=never $OMV_SYSINFO_MODULES \
+		COMPREPLY=( $( command ls --color=never $ESB_SYSINFO_MODULES \
 		  2>/dev/null | egrep '^[0-9]{2}-' | sed 's/[a-z\-]*$//g') )
-		COMPREPLY=( $( compgen -W '${COMPREPLY[@]#$OMV_SYSINFO_MODULES}' \
+		COMPREPLY=( $( compgen -W '${COMPREPLY[@]#$ESB_SYSINFO_MODULES}' \
 		  -- "$cur" ) )
 		;;
 	*)
@@ -41,11 +41,11 @@ _esb-sysinfo()
 		if [[ "$cur" == -* ]]; then
 			COMPREPLY=( $( compgen -W '-c -l -h' -- "$cur" ) )
 		else
-			# Print out all the modules in $OMV_SYSINFO_MODULES starting
+			# Print out all the modules in $ESB_SYSINFO_MODULES starting
 			# with 2 digits and a dash "-".
-			COMPREPLY=( $( command ls --color=never $OMV_SYSINFO_MODULES \
+			COMPREPLY=( $( command ls --color=never $ESB_SYSINFO_MODULES \
 			  2>/dev/null | egrep '^[0-9]{2}-') )
-			COMPREPLY=( $( compgen -W '${COMPREPLY[@]#$OMV_SYSINFO_MODULES}' \
+			COMPREPLY=( $( compgen -W '${COMPREPLY[@]#$ESB_SYSINFO_MODULES}' \
 			  -- "$cur" ) )
 		fi
 	esac

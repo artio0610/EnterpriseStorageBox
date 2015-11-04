@@ -1,4 +1,4 @@
-#!/usr/bin/php5 -c/etc/openmediavault
+#!/usr/bin/php5 -c/etc/enterprisestoragebox
 <?php
 /**
  * This file is part of EnterpriseStorageBox.

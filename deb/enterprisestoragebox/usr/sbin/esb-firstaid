@@ -68,7 +68,7 @@ configure_network() {
 				${ESB_FIRSTAID_DIALOG} --clear --msgbox "The field must not be empty." 8 32
 				continue
 			fi
-			if ! omv_is_ipaddr4 "${address}"; then
+			if ! esb_is_ipaddr4 "${address}"; then
 				${ESB_FIRSTAID_DIALOG} --clear --msgbox "Invalid IPv4 address." 8 26
 				address=""
 			fi
@@ -83,7 +83,7 @@ configure_network() {
 				${ESB_FIRSTAID_DIALOG} --clear --msgbox "The field must not be empty." 8 32
 				continue
 			fi
-			if ! omv_is_netmask4 "${netmask}"; then
+			if ! esb_is_netmask4 "${netmask}"; then
 				${ESB_FIRSTAID_DIALOG} --clear --msgbox "Invalid netmask." 8 22
 				netmask=""
 			fi
@@ -95,7 +95,7 @@ configure_network() {
 			[ $? -ne 0 ] && return 1
 			gateway=$(cat $tempfile)
 			if [ -n "${gateway}" ]; then
-				if ! omv_is_gateway4 "${gateway}"; then
+				if ! esb_is_gateway4 "${gateway}"; then
 					${ESB_FIRSTAID_DIALOG} --clear --msgbox "Invalid gateway." 8 22
 					gateway=""
 				fi
@@ -126,7 +126,7 @@ configure_network() {
 						${ESB_FIRSTAID_DIALOG} --clear --msgbox "The field must not be empty." 8 32
 						continue
 					fi
-					if ! omv_is_ipaddr6 "${address6}"; then
+					if ! esb_is_ipaddr6 "${address6}"; then
 						${ESB_FIRSTAID_DIALOG} --clear --msgbox "Invalid IPv6 address." 8 26
 						address6=""
 					fi
@@ -142,7 +142,7 @@ configure_network() {
 						${ESB_FIRSTAID_DIALOG} --clear --msgbox "The field must not be empty." 8 32
 						continue
 					fi
-					if ! omv_is_netmask6 "${netmask6}"; then
+					if ! esb_is_netmask6 "${netmask6}"; then
 						${ESB_FIRSTAID_DIALOG} --clear --msgbox "Invalid netmask." 8 22
 						netmask=""
 					fi
@@ -154,7 +154,7 @@ configure_network() {
 					[ $? -ne 0 ] && return 1
 					gateway6=$(cat $tempfile)
 					if [ -n "${gateway6}" ]; then
-						if ! omv_is_gateway6 "${gateway6}"; then
+						if ! esb_is_gateway6 "${gateway6}"; then
 							${ESB_FIRSTAID_DIALOG} --clear --msgbox "Invalid gateway." 8 22
 							gateway6=""
 						fi
@@ -182,7 +182,7 @@ configure_network() {
 			if [ -z ${dnsnameservers} ]; then
 				valid=true
 			else
-				if omv_is_ipaddr4 "${dnsnameservers}" -o omv_is_ipaddr6 "${dnsnameservers}"; then
+				if esb_is_ipaddr4 "${dnsnameservers}" -o esb_is_ipaddr6 "${dnsnameservers}"; then
 					valid=true
 				else
 					${ESB_FIRSTAID_DIALOG} --clear --msgbox "Invalid IP address." 8 26
@@ -199,7 +199,7 @@ configure_network() {
 	# Build the RPC parameters for an ethernet network interface.
 	rpcparams="\"uuid\":\"undefined\",\"devicename\":\"${devicename}\",\"method\":\"${method}\",\"address\":\"${address}\",\"netmask\":\"${netmask}\",\"gateway\":\"${gateway}\",\"method6\":\"${method6}\",\"address6\":\"${address6}\",\"netmask6\":${netmask6},\"gateway6\":\"${gateway6}\",\"dnsnameservers\":\"${dnsnameservers}\",\"dnssearch\":\"\",\"mtu\":\"\",\"wol\":${wol},\"options\":\"\",\"comment\":\"\""
 	# Do we process a wireless network interface?
-	if omv_is_wlan "${devicename}"; then
+	if esb_is_wlan "${devicename}"; then
 		# Get the SSID.
 		while [ -z "${wpassid}" ]; do
 			${ESB_FIRSTAID_DIALOG} --clear --inputbox "Please enter the name of the wireless network (SSID)." \
@@ -228,11 +228,11 @@ configure_network() {
 	fi
 	echo "Configuring network interface. Please wait ..."
 	# Delete all existing network interface configuration objects.
-	omv_config_delete "//system/network/interfaces/interface"
+	esb_config_delete "//system/network/interfaces/interface"
 	# Insert a new network interface configuration object.
-	omv_exec_rpc "Network" "${rpcmethod}" "{${rpcparams}}"
+	esb_exec_rpc "Network" "${rpcmethod}" "{${rpcparams}}"
 	[ $? -ne 0 ] && return 1
-	omv_exec_rpc "Config" "applyChanges" "{\"modules\":[],\"force\":false}"
+	esb_exec_rpc "Config" "applyChanges" "{\"modules\":[],\"force\":false}"
 	[ $? -ne 0 ] && return 1
 	return 0
 }
@@ -249,7 +249,7 @@ configure_webgui() {
 		port=$(cat $tempfile)
 		if [ -z "${port}" ]; then
 			${ESB_FIRSTAID_DIALOG} --clear --msgbox "The field must not be empty." 8 32
-		elif ! omv_isnumber ${port}; then
+		elif ! esb_isnumber ${port}; then
 			${ESB_FIRSTAID_DIALOG} --clear --msgbox "Please enter a valid port." 8 32
 			port=""
 		elif [ ${port} -lt 1 -o ${port} -gt 65535 ]; then
@@ -259,7 +259,7 @@ configure_webgui() {
 	done
 	# Before asking to enable HTTPS check if there are any SSL certificates
 	# available.
-	if [ $(omv_config_get_count "//system/certificates/sslcertificate") -gt 0 ]; then
+	if [ $(esb_config_get_count "//system/certificates/sslcertificate") -gt 0 ]; then
 		${ESB_FIRSTAID_DIALOG} --clear --yesno "Do you want to enable HTTPS?" 8 32
 		if [ $? -eq 0 ]; then
 			enablessl=true
@@ -272,7 +272,7 @@ configure_webgui() {
 				sslport=$(cat $tempfile)
 				if [ -z "${sslport}" ]; then
 					${ESB_FIRSTAID_DIALOG} --clear --msgbox "The field must not be empty." 8 32
-				elif ! omv_isnumber ${sslport}; then
+				elif ! esb_isnumber ${sslport}; then
 					${ESB_FIRSTAID_DIALOG} --clear --msgbox "Please enter a valid port." 8 32
 					port=""
 				elif [ ${sslport} -lt 1 -o ${sslport} -gt 65535 ]; then
@@ -314,9 +314,9 @@ configure_webgui() {
 		sslport=443
 	fi
 	echo "Updating web administration settings. Please wait ..."
-	omv_exec_rpc "WebGui" "setSettings" "{\"port\":${port},\"enablessl\":${enablessl},\"sslport\":${sslport},\"forcesslonly\":${forcesslonly},\"sslcertificateref\":\"${sslcertificateref}\",\"timeout\":5}"
+	esb_exec_rpc "WebGui" "setSettings" "{\"port\":${port},\"enablessl\":${enablessl},\"sslport\":${sslport},\"forcesslonly\":${forcesslonly},\"sslcertificateref\":\"${sslcertificateref}\",\"timeout\":5}"
 	[ $? -ne 0 ] && return 1
-	omv_exec_rpc "Config" "applyChanges" "{\"modules\":[],\"force\":false}"
+	esb_exec_rpc "Config" "applyChanges" "{\"modules\":[],\"force\":false}"
 	[ $? -ne 0 ] && return 1
 	return 0
 }
@@ -354,9 +354,9 @@ reset_webgui_passwd() {
 		fi
 	done
 	echo "Updating WebGUI administrator password. Please wait ..."
-	omv_exec_rpc "WebGui" "setPassword" "{\"password\":\"${passwd}\"}"
+	esb_exec_rpc "WebGui" "setPassword" "{\"password\":\"${passwd}\"}"
 	[ $? -ne 0 ] && return 1
-	omv_exec_rpc "Config" "applyChanges" "{\"modules\":[],\"force\":false}"
+	esb_exec_rpc "Config" "applyChanges" "{\"modules\":[],\"force\":false}"
 	[ $? -ne 0 ] && return 1
 	return 0
 }
@@ -393,7 +393,7 @@ EOF
 	${ESB_FIRSTAID_DIALOG} --clear --defaultno --yesno "Do you want to restore the configuration backup? This will overwrite the actual configuration?" 8 57
 	if [ $? -eq 0 ]; then
 		# Replace configuration files and unlink all revision files.
-		omv_exec_rpc "Config" "revertChanges" "{\"filename\":\"${configbak}\"}"
+		esb_exec_rpc "Config" "revertChanges" "{\"filename\":\"${configbak}\"}"
 		[ $? -ne 0 ] && return 1
 		# Display success message.
 		${ESB_FIRSTAID_DIALOG} --clear --msgbox "Configuration backup successfully restored." 7 47
@@ -442,7 +442,7 @@ clean_local_dpkg_repository()
 
 submit_sysinfo()
 {
-	if [ "$(omv_config_get "//system/email/enable")" = "0" ]; then
+	if [ "$(esb_config_get "//system/email/enable")" = "0" ]; then
 		echo "Failed to submit the system diagnostic report to the administrator"
 		echo "account via email because the email notification service is disabled."
 		echo ""
