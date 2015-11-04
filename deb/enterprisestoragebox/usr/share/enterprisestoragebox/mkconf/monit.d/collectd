@@ -1,0 +1,48 @@
+#!/bin/sh
+#
+# This file is part of EnterpriSestorageBox.
+#
+# @license   http://www.gnu.org/licenses/gpl.html GPL Version 3
+# @author   Artur Osinski-Stachowicz <artio0610@gmail.com>
+# @copyright Copyright (c) 2009-2015 Artur Osinski-Stachowicz
+#
+# EnterpriSestorageBox is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# any later version.
+#
+# EnterpriSestorageBox is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with EnterpriSestorageBox. If not, see <http://www.gnu.org/licenses/>.
+
+set -e
+
+. /etc/default/enterprisestoragebox
+. /usr/share/enterprisestoragebox/scripts/helper-functions
+
+ESB_MONIT_SERVICE_COLLECTD_CONFIG=${ESB_MONIT_SERVICE_COLLECTD_CONFIG:-"/etc/monit/conf.d/enterprisestoragebox-collectd.conf"}
+ESB_MONIT_SERVICE_COLLECTD_MODE=${ESB_MONIT_SERVICE_COLLECTD_MODE:-"active"}
+
+rm -f ${ESB_MONIT_SERVICE_COLLECTD_CONFIG}
+[ "$(esb_config_get "//system/monitoring/perfstats/enable")" = "0" ] && exit 0
+
+cat <<EOF > ${ESB_MONIT_SERVICE_COLLECTD_CONFIG}
+check process collectd with pidfile /var/run/collectd.pid
+  start program = "/etc/init.d/collectd start"
+  stop program = "/etc/init.d/collectd stop"
+  mode ${ESB_MONIT_SERVICE_COLLECTD_MODE}
+EOF
+
+# Disable event notifications.
+xmlstarlet sel -t -m "//system/email" \
+  -i "enable = '1'" \
+	-i "//system/notification/notifications/monitprocevents = '0'" \
+	  -v "concat('  noalert ',primaryemail)" \
+	-b \
+  -b \
+  -n \
+  ${ESB_CONFIG_FILE} | xmlstarlet unesc >> ${ESB_MONIT_SERVICE_COLLECTD_CONFIG}

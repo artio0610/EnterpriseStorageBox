@@ -1,0 +1,67 @@
+#!/bin/sh
+#
+# This file is part of EnterpriSestorageBox.
+#
+# @license   http://www.gnu.org/licenses/gpl.html GPL Version 3
+# @author   Artur Osinski-Stachowicz <artio0610@gmail.com>
+# @copyright Copyright (c) 2009-2015 Artur Osinski-Stachowicz
+#
+# EnterpriSestorageBox is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# any later version.
+#
+# EnterpriSestorageBox is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with EnterpriSestorageBox. If not, see <http://www.gnu.org/licenses/>.
+
+set -e
+
+. /etc/default/enterprisestoragebox
+. /usr/share/enterprisestoragebox/scripts/helper-functions
+
+ESB_MONIT_SERVICE_SYSTEM_CONFIG=${ESB_MONIT_SERVICE_SYSTEM_CONFIG:-"/etc/monit/conf.d/enterprisestoragebox-system.conf"}
+ESB_MONIT_SERVICE_SYSTEM_MEMORYUSAGE=${ESB_MONIT_SERVICE_SYSTEM_MEMORYUSAGE:-"90"}
+ESB_MONIT_SERVICE_SYSTEM_CPUUSAGE_USER=${ESB_MONIT_SERVICE_SYSTEM_CPUUSAGE_USER:-"95"}
+ESB_MONIT_SERVICE_SYSTEM_CPUUSAGE_SYSTEM=${ESB_MONIT_SERVICE_SYSTEM_CPUUSAGE_SYSTEM:-"95"}
+ESB_MONIT_SERVICE_SYSTEM_CPUUSAGE_WAIT=${ESB_MONIT_SERVICE_SYSTEM_CPUUSAGE_WAIT:-"95"}
+ESB_MONIT_SERVICE_SYSTEM_LOADAVG_1MIN_MULT=${ESB_MONIT_SERVICE_SYSTEM_LOADAVG_1MIN_MULT:-"2"}
+ESB_MONIT_SERVICE_SYSTEM_LOADAVG_1MIN_CYCLES=${ESB_MONIT_SERVICE_SYSTEM_LOADAVG_1MIN_CYCLES:-"3"}
+ESB_MONIT_SERVICE_SYSTEM_LOADAVG_5MIN_MULT=${ESB_MONIT_SERVICE_SYSTEM_LOADAVG_5MIN_MULT:-"1"}
+ESB_MONIT_SERVICE_SYSTEM_LOADAVG_5MIN_CYCLES=${ESB_MONIT_SERVICE_SYSTEM_LOADAVG_5MIN_CYCLES:-"3"}
+
+# Use 'check system $HOST' in Debian Jessie.
+cat <<EOF > ${ESB_MONIT_SERVICE_SYSTEM_CONFIG}
+check system localhost
+EOF
+
+# Monitor load average.
+if [ "$(esb_config_get "//system/notification/notifications/monitloadavg")" = "1" ]; then
+	# Get the number of CPU's
+	numcpu=$(grep -ci processor /proc/cpuinfo)
+
+	cat <<EOF >> ${ESB_MONIT_SERVICE_SYSTEM_CONFIG}
+  if loadavg (1min) > $(expr ${numcpu} \* ${ESB_MONIT_SERVICE_SYSTEM_LOADAVG_1MIN_MULT}) for ${ESB_MONIT_SERVICE_SYSTEM_LOADAVG_1MIN_CYCLES} cycles then alert
+  if loadavg (5min) > $(expr ${numcpu} \* ${ESB_MONIT_SERVICE_SYSTEM_LOADAVG_5MIN_MULT}) for ${ESB_MONIT_SERVICE_SYSTEM_LOADAVG_5MIN_CYCLES} cycles then alert
+EOF
+fi
+
+# Monitor memory usage.
+if [ "$(esb_config_get "//system/notification/notifications/monitmemoryusage")" = "1" ]; then
+	cat <<EOF >> ${ESB_MONIT_SERVICE_SYSTEM_CONFIG}
+  if memory usage > ${ESB_MONIT_SERVICE_SYSTEM_MEMORYUSAGE}% then alert
+EOF
+fi
+
+# Monitor CPU usage.
+if [ "$(esb_config_get "//system/notification/notifications/monitcpuusage")" = "1" ]; then
+	cat <<EOF >> ${ESB_MONIT_SERVICE_SYSTEM_CONFIG}
+  if cpu usage (user) > ${ESB_MONIT_SERVICE_SYSTEM_CPUUSAGE_USER}% then alert
+  if cpu usage (system) > ${ESB_MONIT_SERVICE_SYSTEM_CPUUSAGE_SYSTEM}% then alert
+  if cpu usage (wait) > ${ESB_MONIT_SERVICE_SYSTEM_CPUUSAGE_WAIT}% then alert
+EOF
+fi
