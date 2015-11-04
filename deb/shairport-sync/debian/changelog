@@ -1,0 +1,16 @@
+shairport-sync (2.4.1-1) stable; urgency=low
+
+  * New upstream release.
+
+ -- VArtur Osinski-Stachowicz <artio0610@gmail.com>, Wed, 04 Nov 2015 06:45:26 +0000
+shairport-sync (2.2.2-1) stable; urgency=low
+
+  * Make the Debian Jessie dpkg-buildpackage command happy.
+
+ -- Artur Osinski-Stachowicz <artio0610@gmail.com>, Wed, 04 Nov 2015 06:45:26 +0000
+
+shairport-sync (2.2.2) stable; urgency=low
+
+  * Initial release.
+
+ -- Artur Osinski-Stachowicz <artio0610@gmail.com>, Wed, 04 Nov 2015 06:45:26 +0000
